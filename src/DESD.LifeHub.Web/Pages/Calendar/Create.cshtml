@@ -1,0 +1,33 @@
+@page
+@model CreateModel
+@{
+    ViewData["Organizations"] = Model.Organizations;
+    ViewData["Rooms"] = Model.Rooms;
+    ViewData["Members"] = Model.Members;
+    ViewData["TimeZone"] = Model.ShellTimeZoneId;
+}
+<div class="grid" style="grid-template-columns:minmax(0,760px);">
+    <section class="card">
+        <div class="card-header">
+            <h2>Neuer Termin</h2>
+        </div>
+        <div class="card-body">
+            @if (!Model.ModelState.IsValid)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+                    <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+                </div>
+            }
+
+            <form method="post" novalidate data-event-form>
+                <partial name="_EventFields" model="Model.Input" />
+
+                <div class="btn-group" style="margin-top:var(--sp-4);">
+                    <button type="submit" class="btn btn-lg">Termin anlegen</button>
+                    <a class="btn btn-secondary" asp-page="/Calendar/Index">Abbrechen</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>

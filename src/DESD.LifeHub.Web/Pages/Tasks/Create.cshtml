@@ -1,0 +1,113 @@
+@page
+@model CreateModel
+@{
+    var members = Model.Members;
+}
+<div class="grid" style="grid-template-columns:minmax(0,760px);">
+    <section class="card">
+        <div class="card-header">
+            <h2>Neue Aufgabe</h2>
+        </div>
+        <div class="card-body">
+            @if (!Model.ModelState.IsValid)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+                    <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+                </div>
+            }
+
+            <form method="post" novalidate>
+                <div class="form-grid">
+                    <div class="field span-2">
+                        <label asp-for="Input.Title">Titel</label>
+                        <input asp-for="Input.Title" autofocus />
+                        <span asp-validation-for="Input.Title" class="field-error"></span>
+                    </div>
+                    <div class="field span-2">
+                        <label asp-for="Input.Description">Beschreibung</label>
+                        <textarea asp-for="Input.Description" rows="5"></textarea>
+                        <span asp-validation-for="Input.Description" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.Status">Status</label>
+                        <select asp-for="Input.Status">
+                            @foreach (var s in Enum.GetValues<TaskItemStatus>())
+                            {
+                                <option value="@s">@Ui.StatusText(s)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.Priority">Priorität</label>
+                        <select asp-for="Input.Priority">
+                            @foreach (var p in Enum.GetValues<TaskPriority>())
+                            {
+                                <option value="@p">@Ui.PriorityText(p)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.Category">Kategorie</label>
+                        <input asp-for="Input.Category" list="task-categories" placeholder="z. B. Arbeit, Einkauf …" />
+                        <datalist id="task-categories">
+                            @foreach (var c in Model.Categories)
+                            {
+                                <option value="@c"></option>
+                            }
+                        </datalist>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.Tags">Schlagwörter</label>
+                        <input asp-for="Input.Tags" placeholder="bereich, wichtig (kommasepariert)" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.DueAt">Fälligkeit</label>
+                        <input asp-for="Input.DueAt" type="datetime-local" />
+                        <span class="hint">In Ihrer Zeitzone (@Model.ShellTimeZoneId)</span>
+                        <span asp-validation-for="Input.DueAt" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.OrganizationId">Bereich</label>
+                        <select asp-for="Input.OrganizationId" id="org-select">
+                            <option value="">Privat</option>
+                            @foreach (var org in Model.Organizations)
+                            {
+                                <option value="@org.Id">@org.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Input.OrganizationId" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.AssignedToUserId">Zugewiesen an</label>
+                        <select asp-for="Input.AssignedToUserId">
+                            <option value="">Keine Person</option>
+                            @foreach (var m in members)
+                            {
+                                <option value="@m.UserId">@m.DisplayName</option>
+                            }
+                        </select>
+                        <span class="hint">Nur möglich, wenn ein Organisationsbereich gewählt ist.</span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.ReminderLeadMinutes">Erinnerung (Minuten vorher)</label>
+                        <input asp-for="Input.ReminderLeadMinutes" type="number" min="0" max="43200" placeholder="15" />
+                    </div>
+                </div>
+
+                <label class="check">
+                    <input asp-for="Input.CreateReminder" />
+                    <span class="check-text">
+                        <span class="check-title">Erinnerung anlegen</span>
+                        <span class="check-desc">Erinnert vor der Fälligkeit (Standard: 15 Minuten).</span>
+                    </span>
+                </label>
+
+                <div class="btn-group" style="margin-top:var(--sp-4);">
+                    <button type="submit" class="btn btn-lg">Aufgabe anlegen</button>
+                    <a class="btn btn-secondary" asp-page="/Tasks/Index">Abbrechen</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,68 @@
+@page
+@model WeekModel
+@{
+    string[] weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+}
+<div class="cal-toolbar">
+    <div class="cal-nav">
+        <a class="btn btn-sm btn-secondary" asp-page="/Calendar/Week"
+           asp-route-year="@Model.PrevWeekStart.Year" asp-route-month="@Model.PrevWeekStart.Month" asp-route-day="@Model.PrevWeekStart.Day" aria-label="Vorherige Woche">
+            <svg aria-hidden="true"><use href="#i-arrow-left"/></svg>
+        </a>
+        <a class="btn btn-sm btn-secondary" asp-page="/Calendar/Week" aria-label="Zur aktuellen Woche">Heute</a>
+        <a class="btn btn-sm btn-secondary" asp-page="/Calendar/Week"
+           asp-route-year="@Model.NextWeekStart.Year" asp-route-month="@Model.NextWeekStart.Month" asp-route-day="@Model.NextWeekStart.Day" aria-label="Nächste Woche">
+            <svg aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </a>
+    </div>
+    <span class="cal-title">@Model.RangeTitle</span>
+    <div class="cal-mode" style="margin-left:auto;">
+        <a asp-page="/Calendar/Index" asp-route-year="@Model.WeekStart.Year" asp-route-month="@Model.WeekStart.Month">Monat</a>
+        <a asp-page="/Calendar/Week" class="active">Woche</a>
+        <a asp-page="/Calendar/Day" asp-route-year="@Model.TodayLocal.Year" asp-route-month="@Model.TodayLocal.Month" asp-route-day="@Model.TodayLocal.Day">Tag</a>
+    </div>
+    <a class="btn btn-sm" asp-page="/Calendar/Create">
+        <svg aria-hidden="true"><use href="#i-calendar-plus"/></svg> Neu
+    </a>
+</div>
+
+<section class="card" style="padding:var(--sp-3);">
+    <div class="cal-timegrid" style="--days:7;">
+        <div class="cal-tg-head"></div>
+        @foreach (var d in Model.Days)
+        {
+            <div class="cal-tg-head @(d.IsToday ? "today" : "")">
+                <strong>@weekdays[(int)d.Date.DayOfWeek == 0 ? 6 : (int)d.Date.DayOfWeek - 1]</strong>
+                <div>@d.Date.Day.</div>
+            </div>
+        }
+        <div class="cal-tg-hour">ganzer Tag</div>
+        @foreach (var d in Model.Days)
+        {
+            <div class="cal-tg-cell @(d.IsToday ? "now" : "")">
+                @foreach (var e in d.Events)
+                {
+                    <a class="cal-tg-event @Ui.ColorClass(e.ColorCategory)" asp-page="/Calendar/Details" asp-route-id="@e.Id">
+                        @if (e.IsAllDay)
+                        {
+                            <text>Ganztägig – </text>
+                        }
+                        else
+                        {
+                            <text>@Model.Local(e.StartsAt, "HH:mm")–@Model.Local(e.EndsAt, "HH:mm") </text>
+                        }@e.Title
+                    </a>
+                }
+                @foreach (var t in d.DueTasks)
+                {
+                    <a class="cal-tg-event" style="background:var(--color-warning-soft);color:var(--color-warning);border-left-color:var(--color-warning);" asp-page="/Tasks/Details" asp-route-id="@t.Id">
+                        @if (t.DueAt is { } due)
+                        {
+                            <text>@Model.Local(due, "HH:mm") </text>
+                        }@t.Title
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,29 @@
+        @if (Model.Announcements.Count > 0)
+        {
+            <section class="card">
+                <div class="card-header">
+                    <h2>Firmenankündigungen</h2>
+                </div>
+                <div class="card-body tight">
+                    <ul class="list">
+                        @foreach (var a in Model.Announcements)
+                        {
+                            <li class="list-item">
+                                <div class="list-main">
+                                    <span class="list-title">
+                                        @a.Title
+                                        @if (a.IsPinned)
+                                        {
+                                            <span class="badge badge-brand">Angeheftet</span>
+                                        }
+                                        <span class="badge @Ui.AnnouncementPriorityBadge(a.Priority)">@Ui.AnnouncementPriorityText(a.Priority)</span>
+                                    </span>
+                                    <span class="list-meta">@Model.Local(a.PublishAt) · @a.Organization?.Name</span>
+                                    <p style="white-space:pre-wrap;margin-top:var(--sp-1);">@a.Body</p>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </section>
+        }

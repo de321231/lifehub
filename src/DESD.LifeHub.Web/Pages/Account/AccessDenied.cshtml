@@ -1,0 +1,19 @@
+@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Kein Zugriff";
+}
+<h2 style="margin-bottom:var(--sp-2);">Kein Zugriff</h2>
+<p class="text-muted" style="margin-bottom:var(--sp-5);">Zugriff nicht gestattet.</p>
+
+<div class="alert alert-warning" role="alert">
+    <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+    <div class="alert-body">
+        Sie sind nicht berechtigt, diesen Bereich aufzurufen. Falls Sie der Meinung sind,
+        dass dies ein Fehler ist, wenden Sie sich an einen Administrator.
+    </div>
+</div>
+
+<p style="margin-top:var(--sp-4);">
+    <a class="btn" asp-page="/Dashboard">Zur Übersicht</a>
+</p>

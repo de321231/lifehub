@@ -1,0 +1,61 @@
+@page
+@model ActivateHelpModel
+@{
+    ViewData["Title"] = "Lizenzhilfe";
+}
+<h2 style="margin-bottom:var(--sp-2);">Hilfe zur Lizenzaktivierung</h2>
+<p class="text-muted" style="margin-bottom:var(--sp-5);">Häufige Fragen rund um Ihren DESD-LifeHub-Lizenzschlüssel.</p>
+
+<div class="grid grid-2">
+    <section class="card">
+        <div class="card-header"><h3>Wo finde ich meinen Schlüssel?</h3></div>
+        <div class="card-body">
+            <p>Ihren persönlichen Lizenzschlüssel erhalten Sie per E-Mail nach dem Kauf bei DESD oder direkt
+            von Ihrem Administrator. Schlüssel bestehen aus mehreren Blöcken alphanumerischer Zeichen.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h3>Wie aktiviere ich die Lizenz?</h3></div>
+        <div class="card-body">
+            <p>Melden Sie sich an und öffnen Sie die Seite <strong>Lizenz</strong> (Klick auf das rote
+            „Lizenz erforderlich"-Abzeichen in der Seitenleiste). Fügen Sie den Schlüssel ein und klicken
+            Sie auf <strong>Lizenz aktivieren</strong>.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h3>Ein Schlüssel – ein Konto</h3></div>
+        <div class="card-body">
+            <p>Jede persönliche Lizenz kann nur einem einzigen Konto zugeordnet werden. Wird derselbe
+            Schlüssel für ein zweites Konto verwendet, lehnt der Server die Aktivierung ab.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h3>Was passiert bei serverausfall?</h3></div>
+        <div class="card-body">
+            <p>Liegt ein zuvor bestätigtes Prüfergebnis vor, greift eine zeitlich begrenzte lokale
+            Kulanzfrist. Läuft diese ab und ist der Lizenzserver weiterhin nicht erreichbar, wird der
+            Zugriff erst wieder nach erfolgreicher Prüfung gewährt.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h3>Wird der Schlüssel sicher gespeichert?</h3></div>
+        <div class="card-body">
+            <p>Ja. Der Schlüssel wird serverseitig mit AES-256-GCM verschlüsselt abgelegt. Der
+            Verschlüsselungsschlüssel liegt ausschliesslich in der Serverkonfiguration (Umgebungsvariable)
+            – nie in der Datenbank, in Logs oder im Browser.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h3>Weitere Hilfe</h3></div>
+        <div class="card-body">
+            <p>Kontaktieren Sie bei Fragen zu Bestellung, Abrechnung oder Lizenzverwaltung den
+            DESD-Support bzw. Ihren Administrator.</p>
+            <a class="btn" asp-page="/Account/Login">Zur Anmeldung</a>
+        </div>
+    </section>
+</div>

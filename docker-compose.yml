@@ -1,0 +1,102 @@
+# ============================================================================
+#  DESD LifeHub – Docker Compose (Produktionsnähe)
+#  Start:  docker compose up -d --build
+#  Logs:   docker compose logs -f web
+#  Stop:   docker compose down
+# ============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: desd-lifehub-web
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+
+      # Datenbank (externer PostgreSQL-Server)
+      Database__Host: ${DB_HOST:-192.168.188.198}
+      Database__Port: ${DB_PORT:-32773}
+      Database__Name: ${DB_NAME:-app}
+      Database__User: ${DB_USER:-wharf}
+      Database__Password: ${DB_PASSWORD:?DB_PASSWORD muss in .env gesetzt sein}
+
+      # Schlüsselbund zur Verschlüsselung der Lizenzschlüssel.
+      LicenseKeyProtection__EncryptionKey: ${LICENSE_ENCRYPTION_KEY:?LICENSE_ENCRYPTION_KEY muss in .env gesetzt sein}
+      LicenseKeyProtection__HashPepper: ${LICENSE_HASH_PEPPER:-}
+
+      # OpenLicensd – Token bleibt serverseitig.
+      OpenLicensd__BaseUrl: ${OPENLICENSD_BASEURL:-https://license.desd.uk}
+      OpenLicensd__ProductCode: ${OPENLICENSD_PRODUCTCODE:-desd-lifehub}
+      OpenLicensd__ApiToken: ${OPENLICENSD_APITOKEN:-}
+      OpenLicensd__ProductId: ${OPENLICENSD_PRODUCTID:-}
+      OpenLicensd__PolicyId: ${OPENLICENSD_POLICYID:-}
+
+      # Sicherheit
+      Security__RequireHttps: ${SECURITY_REQUIREHTTPS:-false}
+      Proxy__TrustedNetworks: ${PROXY_TRUSTED_NETWORKS:-}
+
+      # Erst-Administrator (nur beim ersten Start wirksam)
+      Bootstrap__AdminEmail: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      Bootstrap__AdminPassword: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      Bootstrap__AllowSelfRegistration: ${BOOTSTRAP_ALLOWSELFREGISTRATION:-true}
+
+      # E-Mail (optional)
+      Mail__Host: ${MAIL_HOST:-}
+      Mail__Port: ${MAIL_PORT:-587}
+      Mail__UseStartTls: ${MAIL_USESTARTTLS:-true}
+      Mail__UserName: ${MAIL_USERNAME:-}
+      Mail__Password: ${MAIL_PASSWORD:-}
+      Mail__FromAddress: ${MAIL_FROMADDRESS:-}
+      Mail__FromName: ${MAIL_FROMNAME:-DESD LifeHub}
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+      # Schlüsselbund zur Verschlüsselung der Lizenzschlüssel.
+      LicenseKeyProtection__EncryptionKey: ${LICENSE_ENCRYPTION_KEY:?LICENSE_ENCRYPTION_KEY muss in .env gesetzt sein}
+      LicenseKeyProtection__HashPepper: ${LICENSE_HASH_PEPPER:-}
+
+      # OpenLicensd – Token bleibt serverseitig.
+      OpenLicensd__BaseUrl: ${OPENLICENSD_BASEURL:-https://license.desd.uk}
+      OpenLicensd__ProductCode: ${OPENLICENSD_PRODUCTCODE:-desd-lifehub}
+      OpenLicensd__ApiToken: ${OPENLICENSD_APITOKEN:-}
+      OpenLicensd__ProductId: ${OPENLICENSD_PRODUCTID:-}
+      OpenLicensd__PolicyId: ${OPENLICENSD_POLICYID:-}
+
+      # Sicherheit
+      Security__RequireHttps: ${SECURITY_REQUIREHTTPS:-false}
+      Proxy__TrustedNetworks: ${PROXY_TRUSTED_NETWORKS:-}
+
+      # Erst-Administrator (nur beim ersten Start wirksam)
+      Bootstrap__AdminEmail: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      Bootstrap__AdminPassword: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      Bootstrap__AllowSelfRegistration: ${BOOTSTRAP_ALLOWSELFREGISTRATION:-true}
+
+      # E-Mail (optional)
+      Mail__Host: ${MAIL_HOST:-}
+      Mail__Port: ${MAIL_PORT:-587}
+      Mail__UseStartTls: ${MAIL_USESTARTTLS:-true}
+      Mail__UserName: ${MAIL_USERNAME:-}
+      Mail__Password: ${MAIL_PASSWORD:-}
+      Mail__FromAddress: ${MAIL_FROMADDRESS:-}
+      Mail__FromName: ${MAIL_FROMNAME:-DESD LifeHub}
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  db-data:
+    name: desd-lifehub-db-data

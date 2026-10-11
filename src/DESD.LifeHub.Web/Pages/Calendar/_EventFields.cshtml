@@ -1,0 +1,138 @@
+@model EventFormModel
+@using DESD.LifeHub.Core.Enums
+@using DESD.LifeHub.Core.Entities
+@using DESD.LifeHub.Infrastructure.Services
+@using DESD.LifeHub.Web.Infrastructure
+@{
+    ViewData.TemplateInfo.HtmlFieldPrefix = "Input";
+    var organizations = ViewData["Organizations"] as IReadOnlyList<Organization> ?? [];
+    var rooms = ViewData["Rooms"] as IReadOnlyList<Room> ?? [];
+    var members = ViewData["Members"] as IReadOnlyList<MemberOption> ?? [];
+    var tz = ViewData["TimeZone"] as string ?? "Europe/Berlin";
+    var hasOrgs = organizations.Count > 0;
+}
+<div class="form-grid">
+    <div class="field span-2">
+        <label asp-for="Title">Titel</label>
+        <input asp-for="Title" autofocus />
+        <span asp-validation-for="Title" class="field-error"></span>
+    </div>
+    <div class="field">
+        <label asp-for="StartsAt">Beginn</label>
+        <input asp-for="StartsAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+        <span class="hint">In Ihrer Zeitzone (@tz)</span>
+        <span asp-validation-for="StartsAt" class="field-error"></span>
+    </div>
+    <div class="field">
+        <label asp-for="EndsAt">Ende</label>
+        <input asp-for="EndsAt" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+        <span asp-validation-for="EndsAt" class="field-error"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Location">Ort</label>
+        <input asp-for="Location" placeholder="Adresse, Link …" />
+    </div>
+    <div class="field">
+        <label asp-for="OrganizationId">Bereich</label>
+        <select asp-for="OrganizationId" data-event-org>
+            <option value="">Privat</option>
+            @foreach (var org in organizations)
+            {
+                <option value="@org.Id">@org.Name</option>
+            }
+        </select>
+    </div>
+</div>
+
+<label class="check">
+    <input asp-for="IsAllDay" />
+    <span class="check-text">
+        <span class="check-title">Ganztägiger Termin</span>
+        <span class="check-desc">Zeiten werden ignoriert; der Termin belegt volle Kalendertage.</span>
+    </span>
+</label>
+
+<div class="field">
+    <span class="field-label">Farbe</span>
+    <div class="color-picker" role="radiogroup" aria-label="Farbe">
+        @foreach (var color in Ui.EventColors)
+        {
+            <label class="color-swatch cat-@color" title="@Ui.ColorLabel(color)">
+                <input type="radio" asp-for="ColorCategory" value="@color" />
+                <span class="sr-only">@Ui.ColorLabel(color)</span>
+            </label>
+        }
+    </div>
+</div>
+
+@if (hasOrgs)
+{
+    <div class="form-grid" data-org-fields hidden>
+        <div class="field">
+            <label asp-for="RoomId">Raum</label>
+            <select asp-for="RoomId" data-event-room>
+                <option value="">Kein Raum</option>
+                @foreach (var room in rooms)
+                {
+                    <option value="@room.Id" data-org="@room.OrganizationId">@room.Name@(string.IsNullOrWhiteSpace(room.Location) ? "" : $" – {room.Location}")</option>
+                }
+            </select>
+            <span class="hint">Räume stehen nur für Firmentermine zur Verfügung.</span>
+        </div>
+        <div class="field">
+            <label asp-for="ParticipantUserIds">Teilnehmer</label>
+            <select asp-for="ParticipantUserIds" multiple size="4" data-event-participants>
+                @foreach (var member in members)
+                {
+                    <option value="@member.UserId" data-org="@member.OrganizationId">@member.DisplayName</option>
+                }
+            </select>
+            <span class="hint">Mehrfachauswahl mit Strg/Cmd.</span>
+        </div>
+    </div>
+}
+
+<div class="divider"></div>
+<h3 style="margin-bottom:var(--sp-2);font-size:var(--fs-md);">Wiederholung</h3>
+<div class="form-grid">
+    <div class="field">
+        <label asp-for="RecurrenceFrequency">Wiederholen</label>
+        <select asp-for="RecurrenceFrequency" data-recurrence-frequency>
+            <option value="@RecurrenceFrequency.None">Nicht wiederholen</option>
+            <option value="@RecurrenceFrequency.Daily">Täglich</option>
+            <option value="@RecurrenceFrequency.Weekly">Wöchentlich</option>
+            <option value="@RecurrenceFrequency.Monthly">Monatlich</option>
+            <option value="@RecurrenceFrequency.Yearly">Jährlich</option>
+        </select>
+    </div>
+    <div class="field" data-recurrence-extra hidden>
+        <label asp-for="RecurrenceInterval">Abstand</label>
+        <input asp-for="RecurrenceInterval" type="number" min="1" max="52" />
+        <span asp-validation-for="RecurrenceInterval" class="field-error"></span>
+    </div>
+    <div class="field" data-recurrence-extra hidden>
+        <label asp-for="RecurrenceUntilDate">Serienende (optional)</label>
+        <input asp-for="RecurrenceUntilDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+        <span class="hint">Leer lassen für eine unbegrenzte Serie.</span>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="field">
+    <label asp-for="Description">Beschreibung</label>
+    <textarea asp-for="Description" rows="4"></textarea>
+</div>
+
+<label class="check">
+    <input asp-for="CreateReminder" id="event-reminder-toggle" />
+    <span class="check-text">
+        <span class="check-title">Erinnerung anlegen</span>
+        <span class="check-desc">Erinnert vor dem Beginn (Standard: 15 Minuten).</span>
+    </span>
+</label>
+
+<div class="field" style="max-width:280px;">
+    <label asp-for="ReminderLeadMinutes">Erinnerung (Minuten vorher)</label>
+    <input asp-for="ReminderLeadMinutes" type="number" min="0" max="43200" placeholder="15" />
+</div>

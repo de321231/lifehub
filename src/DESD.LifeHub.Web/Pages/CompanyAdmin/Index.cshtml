@@ -1,0 +1,201 @@
+@page "/{slug}/admin"
+@model IndexModel
+@using DESD.LifeHub.Core.Enums
+@using DESD.LifeHub.Infrastructure.Licensing
+
+@{
+    var freeLicenses = Model.Licenses.Where(l => !l.Revoked && l.AssignedToUserId is null).ToList();
+    var employeesWithoutLicense = Model.Employees.Where(e => !e.HasValidLicense).ToList();
+}
+
+<div class="grid grid-4">
+    <div class="card stat">
+        <span class="stat-icon"><svg aria-hidden="true"><use href="#i-key"/></svg></span>
+        <div>
+            <div class="stat-value">@Model.Pool.Total</div>
+            <div class="stat-label">Lizenzen im Pool</div>
+        </div>
+    </div>
+    <div class="card stat">
+        <span class="stat-icon info"><svg aria-hidden="true"><use href="#i-users"/></svg></span>
+        <div>
+            <div class="stat-value">@Model.Pool.Assigned</div>
+            <div class="stat-label">Zugewiesen</div>
+        </div>
+    </div>
+    <div class="card stat">
+        <span class="stat-icon success"><svg aria-hidden="true"><use href="#i-check-circle"/></svg></span>
+        <div>
+            <div class="stat-value">@Model.Pool.Free</div>
+            <div class="stat-label">Frei verfügbar</div>
+        </div>
+    </div>
+    <div class="card stat">
+        <span class="stat-icon warning"><svg aria-hidden="true"><use href="#i-alert-circle"/></svg></span>
+        <div>
+            <div class="stat-value">@employeesWithoutLicense.Count</div>
+            <div class="stat-label">Mitarbeiter ohne gültige Lizenz</div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Pool.AdminApiConfigured)
+{
+    <div class="alert alert-warning" role="alert" style="margin-top:var(--sp-4);">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body">
+            Es sind keine neuen Kontingente verfügbar. Bitte wenden Sie sich an die Systemverwaltung,
+            um weitere Firmenlizenzen erzeugen zu lassen.
+        </div>
+    </div>
+}
+
+<section class="card" style="margin-top:var(--sp-4);">
+    <div class="card-header">
+        <h2>Mitarbeiter</h2>
+        <div class="card-actions tiny text-muted">@Model.Employees.Count Einträge</div>
+    </div>
+    <div class="card-body tight">
+        @if (Model.Employees.Count == 0)
+        {
+            <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                <div class="empty-icon"><svg aria-hidden="true"><use href="#i-users"/></svg></div>
+                <h3>Keine Mitarbeiter</h3>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Mitarbeiter</th>
+                            <th scope="col">Rolle</th>
+                            <th scope="col">Lizenzstatus</th>
+                            <th scope="col">Schlüssel</th>
+                            <th scope="col">Aus Pool</th>
+                            <th scope="col">Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in Model.Employees)
+                        {
+                            <tr>
+                                <td class="strong">@e.DisplayName<div class="tiny text-muted">@e.Email</div></td>
+                                <td class="tiny">@Model.RoleText(e.Role)</td>
+                                <td>
+                                    <span class="badge @Model.StatusBadge(e.LicenseStatus)">@Model.StatusText(e.LicenseStatus)</span>
+                                    @if (!e.IsActive)
+                                    {
+                                        <span class="badge badge-danger">Deaktiviert</span>
+                                    }
+                                </td>
+                                <td class="tiny">@(e.MaskedKey ?? "–")</td>
+                                <td class="tiny">@(e.FromCompanyPool ? "Ja" : "–")</td>
+                                <td>
+                                    @if (!e.HasValidLicense)
+                                    {
+                                        @if (freeLicenses.Count == 0)
+                                        {
+                                            <span class="tiny text-muted">Kein freier Schlüssel</span>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" asp-page-handler="Assign" asp-route-slug="@Model.Slug"
+                                                  style="display:flex;gap:var(--sp-1);align-items:center;flex-wrap:wrap;">
+                                                <input type="hidden" name="userId" value="@e.UserId" />
+                                                <select name="licenseId" aria-label="Freie Lizenz wählen">
+                                                    @foreach (var f in freeLicenses)
+                                                    {
+                                                        <option value="@f.Id">@f.Label (@f.MaskedKey)</option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-sm">Zuweisen</button>
+                                            </form>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="tiny text-muted">–</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>
+
+<section class="card" style="margin-top:var(--sp-4);">
+    <div class="card-header">
+        <h2>Firmenpool</h2>
+        <div class="card-actions tiny text-muted">@Model.Licenses.Count Schlüssel</div>
+    </div>
+    <div class="card-body tight">
+        @if (Model.Licenses.Count == 0)
+        {
+            <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                <div class="empty-icon"><svg aria-hidden="true"><use href="#i-key"/></svg></div>
+                <h3>Noch keine Lizenzen im Pool</h3>
+                <p class="text-muted">Die Systemverwaltung kann Kontingente für Ihre Firma erzeugen.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Bezeichnung</th>
+                            <th scope="col">Schlüssel</th>
+                            <th scope="col">Läuft ab</th>
+                            <th scope="col">Zugewiesen an</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var l in Model.Licenses)
+                        {
+                            <tr>
+                                <td class="strong">@l.Label</td>
+                                <td class="tiny">@(l.MaskedKey ?? "–")</td>
+                                <td class="tiny">@(l.ExpiresAt is { } exp ? Model.Local(exp, "dd.MM.yyyy") : "unbegrenzt")</td>
+                                <td class="tiny">@(l.AssignedToName ?? "–")</td>
+                                <td>
+                                    @if (l.Revoked)
+                                    {
+                                        <span class="badge badge-danger">Gesperrt</span>
+                                    }
+                                    else if (l.AssignedToUserId is not null)
+                                    {
+                                        <span class="badge badge-brand">Zugewiesen</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-success">Frei</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!l.Revoked && l.AssignedToUserId is not null)
+                                    {
+                                        <form method="post" asp-page-handler="Release" asp-route-slug="@Model.Slug" style="display:inline;">
+                                            <input type="hidden" name="licenseId" value="@l.Id" />
+                                            <button type="submit" class="btn btn-sm btn-ghost">Freigeben</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="tiny text-muted">–</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

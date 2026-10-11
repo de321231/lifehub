@@ -1,0 +1,23 @@
+# Build-Artefakte
+**/bin/
+**/obj/
+**/TestResults/
+
+# Lokale Konfiguration und Geheimnisse
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml

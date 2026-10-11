@@ -1,0 +1,113 @@
+@page
+@model BoardModel
+@{
+    var now = DateTimeOffset.UtcNow;
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+}
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn" asp-page="/Tasks/Create">
+        <svg aria-hidden="true"><use href="#i-plus"/></svg> Neue Aufgabe
+    </a>
+    <a class="btn btn-secondary" asp-page="/Tasks/Index">Liste</a>
+</div>
+
+<section class="card">
+    <div class="card-body tight">
+        <form method="get" class="filter-bar">
+            <div class="field grow">
+                <label asp-for="Search">Suche</label>
+                <input asp-for="Search" type="search" placeholder="Titel oder Beschreibung …" />
+            </div>
+            <div class="field">
+                <label asp-for="Priority">Priorität</label>
+                <select asp-for="Priority" data-autosubmit>
+                    <option value="">Alle</option>
+                    @foreach (var p in Enum.GetValues<TaskPriority>())
+                    {
+                        <option value="@p">@Ui.PriorityText(p)</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label asp-for="OrganizationId">Bereich</label>
+                <select asp-for="OrganizationId" data-autosubmit>
+                    <option value="">Privat + Organisationen</option>
+                    <option value="@Guid.Empty">Nur privat</option>
+                    @foreach (var org in Model.Organizations)
+                    {
+                        <option value="@org.Id">@org.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label class="check" style="padding-top:1.6rem;">
+                    <input type="checkbox" name="OnlyOverdue" value="true" checked="@Model.OnlyOverdue" data-autosubmit />
+                    <span class="check-text"><span class="check-title">Nur überfällig</span></span>
+                </label>
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-secondary">Filtern</button>
+                @if (Model.HasActiveFilter)
+                {
+                    <a class="btn btn-ghost" asp-page="/Tasks/Board">Zurücksetzen</a>
+                }
+            </div>
+        </form>
+    </div>
+</section>
+
+@if (Model.Columns.Values.All(c => c.Count == 0))
+{
+    <div class="card empty" style="margin-top:var(--sp-4);">
+        <div class="empty-icon"><svg aria-hidden="true"><use href="#i-check"/></svg></div>
+        <h3>Das Board ist leer</h3>
+        <p>Ziehen Sie Karten zwischen den Spalten oder ändern Sie den Status über das Auswahlfeld. Aufgaben lassen sich auch per Tastatur ändern.</p>
+        <a class="btn" asp-page="/Tasks/Create">Neue Aufgabe</a>
+    </div>
+}
+else
+{
+    <div class="board" style="margin-top:var(--sp-4);">
+        @foreach (var status in BoardModel.Statuses)
+        {
+            var tasks = Model.Columns[status];
+            <section class="board-column" data-board-column="@status" aria-label="@Ui.StatusText(status)">
+                <div class="board-column-header">
+                    <span>@Ui.StatusText(status)</span>
+                    <span class="count">@tasks.Count</span>
+                </div>
+                <div class="board-cards">
+                    @foreach (var t in tasks)
+                    {
+                        <article class="board-card @(t.IsOverdue(now) ? "" : "")" data-task-card="@t.Id" data-status="@t.Status">
+                            <div class="board-card-title">
+                                <a asp-page="/Tasks/Details" asp-route-id="@t.Id">@t.Title</a>
+                            </div>
+                            <div class="board-card-meta">
+                                <span class="dot-priority @Ui.PriorityDotClass(t.Priority)" title="@Ui.PriorityText(t.Priority)"></span>
+                                @if (t.DueAt is { } due)
+                                {
+                                    <span class="@(t.IsOverdue(now) ? "text-danger" : "")">@Model.Local(due, "dd.MM.")</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(t.Category))
+                                {
+                                    <span>@t.Category</span>
+                                }
+                            </div>
+                            <div style="margin-top:var(--sp-2);">
+                                <label class="sr-only" for="task-status-@t.Id">Status ändern</label>
+                                <select id="task-status-@t.Id" class="small" style="font-size:var(--fs-xs);padding:2px 6px;"
+                                        data-task-status="@t.Id">
+                                    @foreach (var s in BoardModel.Statuses)
+                                    {
+                                        <option value="@s" selected="@(t.Status == s)">@Ui.StatusText(s)</option>
+                                    }
+                                </select>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+}

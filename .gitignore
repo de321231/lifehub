@@ -1,0 +1,31 @@
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+# Buildausgaben
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+publish/
+
+# Geheimnisse – niemals einchecken
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.key
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml

@@ -1,0 +1,316 @@
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var shell = Model as DESD.LifeHub.Web.Infrastructure.LifeHubPageModel;
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var themeClass = isAuthenticated && shell is not null && !string.IsNullOrEmpty(shell.ShellThemeAttribute)
+        ? string.Concat(" data-theme=\"", shell.ShellThemeAttribute, "\"")
+        : "";
+    var nav = shell?.NavSection ?? "";
+    var shellTitle = shell?.PageTitle;
+    var pageTitle = string.IsNullOrEmpty(shellTitle) || shellTitle == "DESD LifeHub"
+        ? "DESD LifeHub"
+        : $"{shellTitle} – DESD LifeHub";
+}
+<!DOCTYPE html>
+<html lang="de"@Html.Raw(themeClass)>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="@csrfToken" />
+    <title>@pageTitle</title>
+    <link rel="stylesheet" href="~/css/lifehub.css" asp-append-version="true" />
+    <script src="~/js/theme-init.js" asp-append-version="true"></script>
+</head>
+<body>
+    <a class="skip-link" href="#main">Zum Inhalt springen</a>
+
+    @if (isAuthenticated)
+    {
+        await RenderAppShellAsync(nav, shell);
+    }
+    else
+    {
+        await RenderAuthShellAsync();
+    }
+
+    <svg aria-hidden="true" focusable="false" style="display:none;">
+        <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 11.5l2.1 2.1L15.5 9"/><rect x="3.5" y="3.5" width="17" height="17" rx="3"/></symbol>
+        <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+        <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 3.5h14a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5z"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9.5a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13.5 6 9.5z"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.1 2.8-4.8 5.5-4.8s4.9 1.7 5.5 4.8"/><circle cx="17" cy="9.5" r="2.6"/><path d="M17.5 13.8c1.9.4 3.1 1.6 3.5 3.7"/></symbol>
+        <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="8" r="4.2"/><path d="M11 11l8.5 8.5M16.5 16.5l2.5-2.5M14 14l2-2"/></symbol>
+        <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></symbol>
+        <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H9"/><path d="M15 8l4 4-4 4M19 12H10"/></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+        <symbol id="i-theme" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c-1.5 0-2.5-.8-2.5-2.2 0-1 .6-1.6 1.7-2.4 1.3-1 2.8-2.2 1.1-4.1-1.5-1.6-.7-4.6 2.8-5A8 8 0 0 0 12 3z"/></symbol>
+        <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/></symbol>
+        <symbol id="i-alert-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16.5v.1"/></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 7.8v.1"/></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.6-3 7.6-7 9.5-4-1.9-7-4.9-7-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 9.5"/></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20l4.5-1L20 7.5 16.5 4 5 15.5z"/><path d="M14.5 6l3.5 3.5"/></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 4h4M8 10v7M12 10v7M16 10v7"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/></symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+        <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 11.5V4h7.5l9.5 9.5-7.5 7.5z"/></symbol>
+        <symbol id="i-calendar-plus" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 10h18M12 13v6M9 16h6"/></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a8 8 0 1 0 .5 6"/><path d="M20 3v5h-5"/></symbol>
+        <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="5" rx="1.5"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9"/><path d="M10 13h4"/></symbol>
+        <symbol id="i-check-double" viewBox="0 0 24 24"><path d="M2 12l3.5 3.5L12 9"/><path d="M9 12l3.5 3.5L22 6"/></symbol>
+        <symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M6 9.5a6 6 0 0 1 6-5.5 6 6 0 0 1 5 2.8"/><path d="M18.5 15.5c.7 1-1.5 1-1.5 1h-13S5 13.5 5 9.5"/><path d="M3 3l18 18"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/></symbol>
+    </svg>
+
+    <script src="~/js/lifehub.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+@functions {
+    // ------------------------------------------------------------ App-Shell
+    private async Task RenderAppShellAsync(string nav, DESD.LifeHub.Web.Infrastructure.LifeHubPageModel? shell)
+    {
+        <div class="app">
+            <aside class="sidebar" data-sidebar aria-label="Hauptnavigation">
+                <div class="brand">
+                    <span class="brand-mark" aria-hidden="true">LH</span>
+                    <span class="brand-text">
+                        <span class="brand-name">DESD LifeHub</span>
+                        <span class="brand-tag">Produktivität &amp; Lizenz</span>
+                    </span>
+                </div>
+
+                <nav>
+                    <div class="nav-group">
+                        <div class="nav-label">Bereiche</div>
+                        <a class="nav-link @(nav == "dashboard" ? "active" : "")" asp-page="/Dashboard">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg>
+                            Übersicht
+                        </a>
+                        <a class="nav-link @(nav == "tasks" ? "active" : "")" asp-page="/Tasks/Index">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
+                            Aufgaben
+                        </a>
+                        <a class="nav-link @(nav == "calendar" ? "active" : "")" asp-page="/Calendar/Index">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-calendar"/></svg>
+                            Kalender
+                        </a>
+                        <a class="nav-link @(nav == "notes" ? "active" : "")" asp-page="/Notes/Index">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-note"/></svg>
+                            Notizen
+                        </a>
+                        <a class="nav-link @(nav == "reminders" ? "active" : "")" asp-page="/Reminders/Index">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-bell"/></svg>
+                            Erinnerungen
+                            @if (shell is { ShellDueReminders: > 0 })
+                            {
+                                <span class="nav-badge">@shell.ShellDueReminders</span>
+                            }
+                        </a>
+                        <a class="nav-link @(nav == "notifications" ? "active" : "")" asp-page="/Notifications/Index">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-bell"/></svg>
+                            Benachrichtigungen
+                            @if (shell is { ShellUnreadNotifications: > 0 })
+                            {
+                                <span class="nav-badge">@shell.ShellUnreadNotifications</span>
+                            }
+                        </a>
+                        <a class="nav-link @(nav == "organizations" ? "active" : "")" asp-page="/Organizations/Index">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg>
+                            Organisationen
+                        </a>
+                    </div>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="nav-group">
+                            <div class="nav-label">Verwaltung</div>
+                            <a class="nav-link @(nav == "admin-overview" ? "active" : "")" asp-page="/Admin/Index">
+                                <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-grid"/></svg>
+                                Übersicht
+                            </a>
+                            <a class="nav-link @(nav == "admin-users" ? "active" : "")" asp-page="/Admin/Users">
+                                <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg>
+                                Benutzer
+                            </a>
+                            <a class="nav-link @(nav == "admin-licenses" ? "active" : "")" asp-page="/Admin/Licenses">
+                                <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-key"/></svg>
+                                Lizenzen
+                            </a>
+                            <a class="nav-link @(nav == "admin-invitations" ? "active" : "")" asp-page="/Admin/Invitations">
+                                <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-mail"/></svg>
+                                Einladungen
+                            </a>
+                        </div>
+                    }
+                </nav>
+
+                <div class="sidebar-footer">
+                    @if (shell is { } s)
+                    {
+                        @if (!s.ShellHasValidLicense)
+                        {
+                            <a class="badge badge-danger" asp-page="/License/Index">Lizenz erforderlich</a>
+                        }
+                        else if (s.ShellServingFromGrace)
+                        {
+                            <span class="badge badge-warning" title="@s.ShellLicenseMessage">Lizenz: Kulanzfrist aktiv</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-success">Lizenz aktiv</span>
+                        }
+                    }
+                    <div class="user-card">
+                        <span class="avatar" aria-hidden="true">@Initials(shell?.ShellDisplayName ?? User.Identity?.Name)</span>
+                        <span class="list-main truncate">
+                            <span class="list-title small truncate">@(shell?.ShellDisplayName ?? "Benutzer")</span>
+                            <span class="list-meta">
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <span class="badge badge-brand">Admin</span>
+                                }
+                                <span class="text-muted tiny">@User.Identity?.Name</span>
+                            </span>
+                        </span>
+                    </div>
+                    <a class="nav-link" asp-page="/Settings/Index">
+                        <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>
+                        Einstellungen
+                    </a>
+                    <form method="post" asp-page="/Account/Logout" class="nav-link" style="padding:0;border:0;background:none;">
+                        <button type="submit" class="nav-link" style="width:100%;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-align:left;">
+                            <svg class="nav-icon" aria-hidden="true" focusable="false"><use href="#i-logout"/></svg>
+                            Abmelden
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            <button type="button" class="mobile-backdrop" data-backdrop aria-label="Navigation schließen"></button>
+
+            <div class="main">
+                <header class="topbar">
+                    <button type="button" class="hamburger icon-btn" data-sidebar-toggle aria-expanded="false" aria-controls="menu-navigation" aria-label="Menü öffnen">
+                        <svg aria-hidden="true" focusable="false"><use href="#i-menu"/></svg>
+                    </button>
+                    <div class="topbar-title">
+                        <h1>@(string.IsNullOrEmpty(shell?.PageTitle) || shell?.PageTitle == "DESD LifeHub" ? "Übersicht" : shell!.PageTitle)</h1>
+                        <span class="topbar-subtitle">
+                            @if (shell is { ShellServingFromGrace: true })
+                            {
+                                <text>Lizenzserver nicht erreichbar – Zugriff über die Kulanzfrist.</text>
+                            }
+                            else
+                            {
+                                <text>@DateTimeOffset.Now.ToString("dddd, dd. MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("de-DE"))</text>
+                            }
+                        </span>
+                    </div>
+                    <div class="topbar-actions">
+                        <button type="button" class="icon-btn" data-theme-toggle aria-label="Darstellung wechseln">
+                            <svg aria-hidden="true" focusable="false"><use href="#i-theme"/></svg>
+                        </button>
+                        <a class="icon-btn @(nav == "notifications" ? "active" : "")" asp-page="/Notifications/Index" aria-label="Benachrichtigungen">
+                            <svg aria-hidden="true" focusable="false"><use href="#i-bell"/></svg>
+                            @if (shell is { ShellUnreadNotifications: > 0 })
+                            {
+                                <span class="dot">@shell.ShellUnreadNotifications</span>
+                            }
+                        </a>
+                    </div>
+                </header>
+
+                @if (shell is { StatusMessage: not null })
+                {
+                    <div class="content" style="padding-bottom:0;">
+                        <div class="alert alert-success" role="alert">
+                            <svg aria-hidden="true"><use href="#i-check-circle"/></svg>
+                            <div class="alert-body">@shell.StatusMessage</div>
+                            <button type="button" class="btn btn-ghost btn-sm" data-dismiss aria-label="Schließen">×</button>
+                        </div>
+                    </div>
+                }
+                @if (shell is { ErrorMessage: not null })
+                {
+                    <div class="content" style="padding-bottom:0;">
+                        <div class="alert alert-danger" role="alert">
+                            <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+                            <div class="alert-body">@shell.ErrorMessage</div>
+                            <button type="button" class="btn btn-ghost btn-sm" data-dismiss aria-label="Schließen">×</button>
+                        </div>
+                    </div>
+                }
+
+                <main id="main" class="content">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+
+    // ------------------------------------------------------------ Auth-Shell
+    private async Task RenderAuthShellAsync()
+    {
+        <div class="auth-shell">
+            <aside class="auth-aside">
+                <div class="auth-brand" style="align-items:center;">
+                    <span class="brand-mark" style="width:44px;height:44px;">LH</span>
+                    <div style="display:flex;flex-direction:column;line-height:1.2;">
+                        <strong>DESD LifeHub</strong>
+                        <small style="color:rgba(255,255,255,.8);">Produktivität &amp; Lizenz</small>
+                    </div>
+                </div>
+                <div>
+                    <h1>Alles an einem Ort.</h1>
+                    <p class="lead">Aufgaben, Kalender, Notizen und Erinnerungen – privat und mit Ihrem Team in sicheren Organisationsbereichen.</p>
+                    <div class="auth-feature" style="margin-top:var(--sp-5);">
+                        <svg><use href="#i-check"/></svg>
+                        <p><strong>Serverseitige Lizenzprüfung</strong><span>OpenLicensd-basiert, ohne dass Schlüssel den Server verlassen.</span></p>
+                    </div>
+                    <div class="auth-feature" style="margin-top:var(--sp-3);">
+                        <svg><use href="#i-shield"/></svg>
+                        <p><strong>Mandantentrennung</strong><span>Jede Abfrage ist gegen organisationsübergreifenden Zugriff abgesichert.</span></p>
+                    </div>
+                </div>
+                <div style="font-size:var(--fs-xs);opacity:.75;">© @DateTimeOffset.Now.Year DESD – LifeHub</div>
+            </aside>
+            <main class="auth-main">
+                <div class="auth-card card">
+                    @if (ViewData["EmailNotice"] is string notice)
+                    {
+                        <div class="alert alert-info" role="alert">
+                            <svg aria-hidden="true"><use href="#i-info"/></svg>
+                            <div class="alert-body">@notice</div>
+                        </div>
+                    }
+                    <div class="card-body">
+                        @RenderBody()
+                    </div>
+                </div>
+            </main>
+        </div>
+    }
+
+    private static string Initials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "?";
+        }
+
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+        {
+            return parts[0][..1].ToUpperInvariant();
+        }
+
+        return string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant();
+    }
+}

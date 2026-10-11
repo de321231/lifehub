@@ -1,0 +1,126 @@
+@page
+@model UsersModel
+
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn btn-secondary" asp-page="/Admin/Index">
+        <svg aria-hidden="true"><use href="#i-arrow-left"/></svg> Zurück zur Übersicht
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ResetLink))
+{
+    <div class="alert alert-info" role="alert" style="margin-bottom:var(--sp-4);">
+        <svg aria-hidden="true"><use href="#i-key"/></svg>
+        <div class="alert-body">
+            <strong>Link zum Zurücksetzen des Passworts</strong>
+            <p class="tiny" style="margin:var(--sp-1) 0;">
+                Für <strong>@Model.ResetLinkForEmail</strong>. Der Link wird nur einmal angezeigt – bitte
+                sicher an die Person übermitteln.
+            </p>
+            <input class="input" type="text" readonly value="@Model.ResetLink" onclick="this.select()" />
+        </div>
+    </div>
+}
+
+<section class="card">
+    <div class="card-header">
+        <h2>Benutzer suchen</h2>
+    </div>
+    <div class="card-body tight">
+        <form method="get" class="filter-bar">
+            <div class="field grow">
+                <label asp-for="Search">Suche</label>
+                <input asp-for="Search" type="search" placeholder="Name oder E-Mail …" />
+            </div>
+            <div class="field">
+                <button type="submit" class="btn">Suchen</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="card" style="margin-top:var(--sp-4);">
+    <div class="card-header">
+        <h2>Benutzerkonten</h2>
+        <div class="card-actions tiny text-muted">@Model.Users.Count Einträge</div>
+    </div>
+    <div class="card-body tight">
+        @if (Model.Users.Count == 0)
+        {
+            <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                <div class="empty-icon"><svg aria-hidden="true"><use href="#i-users"/></svg></div>
+                <h3>Keine Benutzer gefunden</h3>
+                <p class="text-muted">Passen Sie die Suche an.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">E-Mail</th>
+                            <th scope="col">Rollen</th>
+                            <th scope="col">Registriert</th>
+                            <th scope="col">Letzte Anmeldung</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in Model.Users)
+                        {
+                            var isAdmin = u.Roles.Contains("Admin");
+                            <tr>
+                                <td class="strong">@u.DisplayName</td>
+                                <td class="tiny text-muted">@u.Email</td>
+                                <td>
+                                    @if (isAdmin)
+                                    {
+                                        <span class="badge badge-brand">Admin</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-neutral">Benutzer</span>
+                                    }
+                                </td>
+                                <td class="tiny">@Model.Local(u.CreatedAt, "dd.MM.yyyy")</td>
+                                <td class="tiny">@(u.LastLoginAt is { } last ? Model.Local(last, "dd.MM.yyyy HH:mm") : "–")</td>
+                                <td>
+                                    @if (u.IsActive)
+                                    {
+                                        <span class="badge badge-success">Aktiv</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Deaktiviert</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div style="display:flex;gap:var(--sp-1);flex-wrap:wrap;">
+                                        <form method="post" asp-page-handler="ToggleActive" asp-route-id="@u.UserId" style="display:inline;">
+                                            <input type="hidden" name="isActive" value="@((!u.IsActive).ToString().ToLowerInvariant())" />
+                                            <button type="submit" class="btn btn-sm btn-secondary">
+                                                @(u.IsActive ? "Deaktivieren" : "Aktivieren")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="ToggleAdmin" asp-route-id="@u.UserId" style="display:inline;">
+                                            <input type="hidden" name="isAdmin" value="@((!isAdmin).ToString().ToLowerInvariant())" />
+                                            <button type="submit" class="btn btn-sm btn-secondary">
+                                                @(isAdmin ? "Admin entziehen" : "Als Admin")
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="ResetPassword" asp-route-id="@u.UserId" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-ghost">Passwort-Link</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,96 @@
+@page "/"
+@model DESD.LifeHub.Web.Pages.IndexModel
+
+<div class="container">
+  <div class="jumbotron mt-5">
+    <h1 class="display-4">Willkommen bei DESD LifeHub</h1>
+    <p class="lead">Die moderne SaaS-Plattform für Kalender, Aufgaben, Notizen und mehr.</p>
+    <hr class="my-4" />
+    <div class="row">
+      <div class="col-md-4">
+        <h3>Features</h3>
+        <ul>
+          <li>🤖 KI-gestütztes Zusammenfassungsfeature</li>
+          <li>📅 Kalender mit integrierten Urlaubsplanungen</li>
+          <li>✅ Aufgabenmanagement</li>
+          <li>📝 Notizen und Wissensdatenbank</li>
+          <li>🔔 Erinnerungen</li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h3>Preise</h3>
+        <ul>
+          <li><strong>Grundlage</strong>: Kostenlos mit begrenzten Funktionen</li>
+          <li><strong>Pro</strong>: 9,99€/Monat</li>
+          <li><strong>Unternehmen</strong>: Individuell</li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h3>Unterstützt</h3>
+        <ul>
+          <li>Firmenkalender</li>
+          <li>Egalitäres Lizenzsystem</li>
+          <li>Berechtigungsbasierte Rollen</li>
+          <li>Zugang von überall</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-4">
+      <a href="/Account/Login" class="btn btn-primary btn-lg">Login</a>
+      <a href="#features" class="btn btn-secondary btn-lg ml-2">Mehr erfahren</a>
+    </div>
+  </div>
+
+  <div id="features" class="my-5">
+    <h2>Unsere Funktionen</h2>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">🎯 KI-gestützter Zusammenfassungen</h5>
+            <p class="card-text">Erstellen Sie Zusammenfassungen von Notizen und Aufgaben mit KI-Unterstützung.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">📅 Kalenderfunktionen</h5>
+            <p class="card-text">Planen Sie Veranstaltungen, teilen Sie Kalender mit Kollegen und verwalten Sie Raumressourcen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <h3>Haben Sie noch Fragen?</h3>
+    <p><a href="mailto:support@desd.uk">support@desd.uk</a></p>
+  </div>
+</div>
+
+<style>
+  .jumbotron {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem;
+    border-radius: 10px;
+  }
+
+  .badge {
+    background-color: #6c757d;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+  }
+
+  .ml-2 {
+    margin-left: 0.5rem;
+  }
+</style>

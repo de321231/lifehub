@@ -1,0 +1,82 @@
+@page
+@model IndexModel
+@{
+    var now = DateTimeOffset.UtcNow;
+}
+
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    @if (Model.Notifications.Any(n => !n.IsRead))
+    {
+        <form method="post" asp-page-handler="MarkAllRead">
+            <button type="submit" class="btn btn-secondary">
+                <svg aria-hidden="true"><use href="#i-check-double"/></svg> Alle als gelesen markieren
+            </button>
+        </form>
+    }
+    <span class="small text-muted">@Model.Notifications.Count(n => !n.IsRead) ungelesen</span>
+</div>
+
+<section class="card">
+    <div class="card-header">
+        <h2>Benachrichtigungen · @Model.Notifications.Count</h2>
+    </div>
+    <div class="card-body tight">
+        @if (Model.Notifications.Count == 0)
+        {
+            <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                <div class="empty-icon"><svg aria-hidden="true"><use href="#i-bell"/></svg></div>
+                <h3>Keine Benachrichtigungen</h3>
+                <p>Hier erscheinen Hinweise aus ausgelösten Erinnerungen und Systemmeldungen.</p>
+            </div>
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var n in Model.Notifications)
+                {
+                    <li class="list-item @(n.IsRead ? "" : "")" style="background:@(n.IsRead ? "transparent" : "var(--color-info-soft)")">
+                        <svg class="nav-icon @(n.IsRead ? "text-muted" : "")" aria-hidden="true"><use href="#i-bell"/></svg>
+                        <div class="list-main">
+                            <span class="list-title @(n.IsRead ? "text-muted" : "")">
+                                @if (!string.IsNullOrWhiteSpace(n.Url))
+                                {
+                                    <a href="@n.Url">@n.Title</a>
+                                }
+                                else
+                                {
+                                    <text>@n.Title</text>
+                                }
+                                @if (!n.IsRead)
+                                {
+                                    <span class="badge badge-brand">neu</span>
+                                }
+                            </span>
+                            <span class="list-meta">
+                                <span>@Model.Local(n.CreatedAt, "dd.MM.yyyy HH:mm")</span>
+                                @if (n.CreatedAt.Date != now.Date) { <text>·</text> }
+                            </span>
+                            @if (!string.IsNullOrWhiteSpace(n.Body))
+                            {
+                                <span class="small" style="margin-top:2px;display:block;">@n.Body</span>
+                            }
+                        </div>
+                        <div class="list-actions">
+                            @if (!n.IsRead)
+                            {
+                                <form method="post" asp-page-handler="MarkRead" asp-route-id="@n.Id" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-secondary">Gelesen</button>
+                                </form>
+                            }
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@n.Id" style="display:inline;"
+                                  data-confirm="Diese Benachrichtigung wirklich löschen?">
+                                <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="Löschen">
+                                    <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</section>

@@ -1,0 +1,51 @@
+@page
+@model InvitationModel
+@{
+    ViewData["Title"] = "Einladung annehmen";
+}
+<h2 style="margin-bottom:var(--sp-2);">Einladung annehmen</h2>
+<p class="text-muted" style="margin-bottom:var(--sp-5);">Sie sind eingeladen. Legen Sie Ihr Passwort fest, um loszulegen.</p>
+
+@if (!Model.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+    </div>
+}
+
+@if (Model.TokenMissing)
+{
+    <div class="alert alert-warning" role="alert">
+        <svg aria-hidden="true"><use href="#i-info"/></svg>
+        <div class="alert-body">
+            Bitte verwenden Sie den vollständigen Einladungslink, den Sie erhalten haben.
+            Falls Sie Hilfe benötigen, wenden Sie sich an Ihren Administrator.
+        </div>
+    </div>
+}
+else
+{
+    <form method="post" novalidate>
+        <input type="hidden" asp-for="Token" />
+        <div class="form-grid" style="grid-template-columns:minmax(0,1fr);">
+            <div class="field">
+                <label asp-for="Input.Password">Passwort</label>
+                <input asp-for="Input.Password" autocomplete="new-password" autofocus />
+                <span class="hint">Mindestens 12 Zeichen mit Gross-/Kleinbuchstaben, Zahl und Sonderzeichen.</span>
+                <span asp-validation-for="Input.Password" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.ConfirmPassword">Passwort wiederholen</label>
+                <input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-lg btn-block" style="margin-top:var(--sp-4);">Einladung annehmen</button>
+    </form>
+}
+
+<div class="divider"></div>
+<p class="small text-muted" style="margin:0;">
+    Bereits ein Konto? <a asp-page="/Account/Login">Zur Anmeldung</a>
+</p>

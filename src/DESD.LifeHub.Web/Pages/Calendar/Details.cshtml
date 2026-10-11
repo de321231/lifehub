@@ -1,0 +1,162 @@
+@page
+@model DetailsModel
+@{
+    var e = Model.Event!;
+    var startDay = TimeZoneCatalog.ToLocal(e.StartsAt, Model.ShellTimeZoneId);
+    var endDay = TimeZoneCatalog.ToLocal(e.EndsAt, Model.ShellTimeZoneId);
+}
+
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn btn-secondary" asp-page="/Calendar/Index">
+        <svg aria-hidden="true"><use href="#i-arrow-left"/></svg> Zum Kalender
+    </a>
+    @if (Model.CanEdit)
+    {
+        <a class="btn" asp-page="/Calendar/Edit" asp-route-id="@e.Id">
+            <svg aria-hidden="true"><use href="#i-edit"/></svg> Bearbeiten
+        </a>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@e.Id" style="display:inline;"
+              data-confirm="Diesen Termin wirklich löschen?">
+            <button type="submit" class="btn btn-danger-outline">
+                <svg aria-hidden="true"><use href="#i-trash"/></svg> Löschen
+            </button>
+        </form>
+    }
+</div>
+
+<section class="card" style="max-width:760px;margin-top:var(--sp-4);border-top:4px solid var(--cal-color, var(--desd-primary));">
+    <div class="card-header">
+        <h2 style="font-size:var(--fs-lg);">@e.Title</h2>
+        <div class="card-actions">
+            <span class="@Ui.ColorBadge(e.ColorCategory)">@Ui.ColorLabel(e.ColorCategory)</span>
+            @if (e.IsAllDay)
+            {
+                <span class="badge badge-accent">Ganztägig</span>
+            }
+            @if (e.IsRecurring)
+            {
+                <span class="badge badge-outline"><svg aria-hidden="true"><use href="#i-refresh"/></svg> @Ui.RecurrenceText(e.RecurrenceFrequency, e.RecurrenceInterval)</span>
+            }
+            @if (e.OrganizationId.HasValue)
+            {
+                <span class="badge badge-outline">@Model.OrgName(e)</span>
+            }
+            else
+            {
+                <span class="badge badge-outline">Privat</span>
+            }
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="kv">
+            <dt>Datum</dt>
+            <dd>@startDay.ToString("dddd, dd. MMMM yyyy", LifeHubPageModel.German)</dd>
+            <dt>Zeit</dt>
+            <dd>
+                @if (e.IsAllDay)
+                {
+                    <text>Ganztägig</text>
+                    if (endDay.Date > startDay.Date)
+                    {
+                        <text> – @endDay.ToString("dd.MM.yyyy", LifeHubPageModel.German)</text>
+                    }
+                }
+                else
+                {
+                    <text>@startDay.ToString("HH:mm") – @endDay.ToString("HH:mm") Uhr</text>
+                    if (endDay.Date > startDay.Date)
+                    {
+                        <text> (@endDay.ToString("dd.MM.yyyy", LifeHubPageModel.German))</text>
+                    }
+                }
+            </dd>
+            <dt>Zeitzone</dt>
+            <dd>@e.DisplayTimeZoneId</dd>
+            @if (e.Room is not null)
+            {
+                <dt>Raum</dt>
+                <dd>@e.Room.Name@(string.IsNullOrWhiteSpace(e.Room.Location) ? "" : $" – {e.Room.Location}")</dd>
+            }
+            @if (!string.IsNullOrWhiteSpace(e.Location))
+            {
+                <dt>Ort</dt>
+                <dd>@e.Location</dd>
+            }
+            @if (e.TaskItemId is { } taskId)
+            {
+                <dt>Verknüpfte Aufgabe</dt>
+                <dd><a asp-page="/Tasks/Details" asp-route-id="@taskId">Aufgabe ansehen</a></dd>
+            }
+            <dt>Erstellt</dt>
+            <dd>@Model.Local(e.CreatedAt)</dd>
+            @if (e.UpdatedAt is { } updated)
+            {
+                <dt>Geändert</dt>
+                <dd>@Model.Local(updated)</dd>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(e.Description))
+        {
+            <div class="divider"></div>
+            <h3 style="margin-bottom:var(--sp-2);">Beschreibung</h3>
+            <p style="white-space:pre-wrap;line-height:1.6;">@e.Description</p>
+        }
+    </div>
+</section>
+
+@if (e.OrganizationId.HasValue)
+{
+    <section class="card" style="max-width:760px;margin-top:var(--sp-4);">
+        <div class="card-header">
+            <h2>Teilnehmer (@e.Participants.Count)</h2>
+        </div>
+        <div class="card-body tight">
+            @if (e.Participants.Count == 0)
+            {
+                <p class="muted" style="padding:var(--sp-3);">Noch keine Teilnehmer eingeladen.</p>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var p in e.Participants.OrderByDescending(p => p.IsOrganizer))
+                    {
+                        <li class="list-item">
+                            <span class="avatar avatar-sm" aria-hidden="true">@(p.User?.DisplayName?[..1].ToUpperInvariant() ?? "?")</span>
+                            <div class="list-main">
+                                <span class="list-title">
+                                    @(p.User?.DisplayName ?? "Unbekannt")
+                                    @if (p.IsOrganizer) { <span class="badge badge-brand">Organisator</span> }
+                                </span>
+                            </div>
+                            <span class="badge @Ui.ParticipantResponseBadge(p.Response)">@Ui.ParticipantResponseText(p.Response)</span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (Model.MyParticipation is not null && !Model.MyParticipation.IsOrganizer)
+            {
+                <div class="divider"></div>
+                <div class="btn-group" style="padding:var(--sp-2);">
+                    <form method="post" asp-page-handler="Respond" asp-route-id="@e.Id" asp-route-response="Accepted"><button class="btn btn-sm">Zusagen</button></form>
+                    <form method="post" asp-page-handler="Respond" asp-route-id="@e.Id" asp-route-response="Tentative"><button class="btn btn-sm btn-secondary">Vielleicht</button></form>
+                    <form method="post" asp-page-handler="Respond" asp-route-id="@e.Id" asp-route-response="Declined"><button class="btn btn-sm btn-danger-outline">Absagen</button></form>
+                </div>
+            }
+
+            @if (Model.CanEdit && Model.InvitableMembers.Count > 0)
+            {
+                <form method="post" asp-page-handler="Invite" asp-route-id="@e.Id" class="inline-form" style="padding:var(--sp-2);gap:var(--sp-2);">
+                    <select name="memberUserId" aria-label="Mitglied einladen">
+                        @foreach (var m in Model.InvitableMembers)
+                        {
+                            <option value="@m.UserId">@m.DisplayName</option>
+                        }
+                    </select>
+                    <button type="submit" class="btn btn-sm">Einladen</button>
+                </form>
+            }
+        </div>
+    </section>
+}

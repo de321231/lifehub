@@ -1,0 +1,221 @@
+@page
+@model IndexModel
+@{
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+    var now = DateTimeOffset.UtcNow;
+}
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn" asp-page="/Tasks/Create">
+        <svg aria-hidden="true"><use href="#i-plus"/></svg> Neue Aufgabe
+    </a>
+    <a class="btn btn-secondary @(Request.Path.StartsWithSegments("/Tasks/Board") ? "active" : "")" asp-page="/Tasks/Board">Board</a>
+</div>
+
+<section class="card">
+    <div class="card-header">
+        <h2 style="font-size:var(--fs-md);">Aufgaben filtern</h2>
+    </div>
+    <div class="card-body tight">
+        <form method="get" class="filter-bar">
+            <div class="field grow">
+                <label asp-for="Search">Suche</label>
+                <input asp-for="Search" type="search" placeholder="Titel, Beschreibung oder Schlagwort …" />
+            </div>
+            <div class="field">
+                <label asp-for="Status">Status</label>
+                <select asp-for="Status" data-autosubmit>
+                    <option value="">Alle</option>
+                    @foreach (var s in Enum.GetValues<TaskItemStatus>())
+                    {
+                        <option value="@s">@Ui.StatusText(s)</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label asp-for="Priority">Priorität</label>
+                <select asp-for="Priority" data-autosubmit>
+                    <option value="">Alle</option>
+                    @foreach (var p in Enum.GetValues<TaskPriority>())
+                    {
+                        <option value="@p">@Ui.PriorityText(p)</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label asp-for="OrganizationId">Bereich</label>
+                <select asp-for="OrganizationId" data-autosubmit>
+                    <option value="">Privat + Organisationen</option>
+                    <option value="@Guid.Empty">Nur privat</option>
+                    @foreach (var org in Model.Organizations)
+                    {
+                        <option value="@org.Id">@org.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label asp-for="Category">Kategorie</label>
+                <select asp-for="Category" data-autosubmit>
+                    <option value="">Alle</option>
+                    @foreach (var c in Model.Categories)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label asp-for="Sort">Sortierung</label>
+                <select asp-for="Sort" data-autosubmit>
+                    <option value="@TaskSort.DueAscending">Fälligkeit ↑</option>
+                    <option value="@TaskSort.DueDescending">Fälligkeit ↓</option>
+                    <option value="@TaskSort.CreatedDescending">Neu zuerst</option>
+                    <option value="@TaskSort.PriorityDescending">Priorität</option>
+                    <option value="@TaskSort.TitleAscending">Titel A–Z</option>
+                </select>
+            </div>
+            <div class="field">
+                <label class="check" style="padding-top:1.6rem;">
+                    <input type="checkbox" name="OnlyMine" value="true" checked="@Model.OnlyMine" data-autosubmit />
+                    <span class="check-text"><span class="check-title">Nur meine</span></span>
+                </label>
+            </div>
+            <div class="field">
+                <label class="check" style="padding-top:1.6rem;">
+                    <input type="checkbox" name="OnlyOverdue" value="true" checked="@Model.OnlyOverdue" data-autosubmit />
+                    <span class="check-text"><span class="check-title">Nur überfällig</span></span>
+                </label>
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-secondary">Filtern</button>
+                @if (Model.HasActiveFilter)
+                {
+                    <a class="btn btn-ghost" asp-page="/Tasks/Index">Zurücksetzen</a>
+                }
+            </div>
+        </form>
+
+        @if (Model.Tags.Count > 0)
+        {
+            <div style="margin-top:var(--sp-3);display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                <span class="small text-muted">Schlagwörter:</span>
+                @foreach (var tag in Model.Tags)
+                {
+                    <a class="tag" asp-page="/Tasks/Index" asp-route-tag="@tag" asp-route-search="" asp-route-status="" asp-route-priority="" asp-route-category="" asp-route-organizationId="" asp-route-onlymine="false" asp-route-onlyoverdue="false">@tag</a>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<section class="card" style="margin-top:var(--sp-4);">
+    <div class="card-header">
+        <h2>Aufgaben · @Model.Tasks.Count</h2>
+        <div class="card-actions">
+            <a class="btn btn-sm btn-secondary" asp-page="/Tasks/Create">Neu</a>
+        </div>
+    </div>
+
+    @if (Model.Tasks.Count == 0)
+    {
+        <div class="empty">
+            <div class="empty-icon"><svg aria-hidden="true"><use href="#i-check"/></svg></div>
+            <h3>Keine Aufgaben gefunden</h3>
+            <p>
+                @if (Model.HasActiveFilter)
+                {
+                    <text>Keine Aufgaben passen auf die aktuellen Filter. Passen Sie die Filter an oder legen Sie eine neue Aufgabe an.</text>
+                }
+                else
+                {
+                    <text>Sie haben noch keine Aufgaben. Erstellen Sie Ihre erste Aufgabe und behalten Sie den Überblick.</text>
+                }
+            </p>
+            <a class="btn" asp-page="/Tasks/Create">Neue Aufgabe</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th scope="col">Aufgabe</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Priorität</th>
+                        <th scope="col">Fälligkeit</th>
+                        <th scope="col">Bereich</th>
+                        <th scope="col" class="actions">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Tasks)
+                    {
+                        <tr class="@(t.IsOverdue(now) ? "row-overdue" : "")">
+                            <td>
+                                <a asp-page="/Tasks/Details" asp-route-id="@t.Id" class="strong">@t.Title</a>
+                                @if (!string.IsNullOrWhiteSpace(t.Category))
+                                {
+                                    <div class="tiny text-muted">@t.Category</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(t.Tags))
+                                {
+                                    <div class="tag-list" style="margin-top:4px;">
+                                        @foreach (var tag in Ui.SplitTags(t.Tags))
+                                        {
+                                            <span class="tag">@tag</span>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                            <td><span class="badge @Ui.StatusBadge(t.Status)">@Ui.StatusText(t.Status)</span></td>
+                            <td>
+                                <span style="display:inline-flex;align-items:center;gap:6px;">
+                                    <span class="dot-priority @Ui.PriorityDotClass(t.Priority)"></span>@Ui.PriorityText(t.Priority)
+                                </span>
+                            </td>
+                            <td>
+                                @if (t.DueAt is { } due)
+                                {
+                                    <span class="@(t.IsOverdue(now) ? "text-danger small" : "small")">@Model.Local(due)</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">–</span>
+                                }
+                            </td>
+                            <td class="tiny text-muted">
+                                @if (t.OrganizationId is { } orgId)
+                                {
+                                    var name = Model.Organizations.FirstOrDefault(o => o.Id == orgId)?.Name ?? "Organisation";
+                                    <span>@name</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-outline">Privat</span>
+                                }
+                            </td>
+                            <td class="actions">
+                                <div class="btn-group">
+                                    <a class="btn btn-sm btn-ghost btn-icon" asp-page="/Tasks/Details" asp-route-id="@t.Id" title="Details">
+                                        <svg aria-hidden="true"><use href="#i-info"/></svg>
+                                    </a>
+                                    @if (Model.CanEdit(t, userId))
+                                    {
+                                        <a class="btn btn-sm btn-ghost btn-icon" asp-page="/Tasks/Edit" asp-route-id="@t.Id" title="Bearbeiten">
+                                            <svg aria-hidden="true"><use href="#i-edit"/></svg>
+                                        </a>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" style="display:inline;"
+                                              data-confirm="Diese Aufgabe wirklich löschen?">
+                                            <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="Löschen">
+                                                <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

@@ -1,0 +1,49 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Konto erstellen";
+    var regText = Model.RegistrationAllowed ? "" : "Die Registrierung ist derzeit deaktiviert.";
+}
+<h2 style="margin-bottom:var(--sp-2);">Konto erstellen</h2>
+<p class="text-muted" style="margin-bottom:var(--sp-5);">Richten Sie Ihren persönlichen Bereich ein.</p>
+
+@if (!Model.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+    </div>
+}
+
+<form method="post" novalidate>
+    <input type="hidden" asp-for="ReturnUrl" />
+    <div class="form-grid" style="grid-template-columns:minmax(0,1fr);">
+        <div class="field">
+            <label asp-for="Input.DisplayName">Anzeigename</label>
+            <input asp-for="Input.DisplayName" autofocus />
+            <span asp-validation-for="Input.DisplayName" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Email">E-Mail-Adresse</label>
+            <input asp-for="Input.Email" autocomplete="username" />
+            <span asp-validation-for="Input.Email" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Password">Passwort</label>
+            <input asp-for="Input.Password" autocomplete="new-password" />
+            <span class="hint">Mindestens 12 Zeichen mit Gross-/Kleinbuchstaben, Zahl und Sonderzeichen.</span>
+            <span asp-validation-for="Input.Password" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.ConfirmPassword">Passwort wiederholen</label>
+            <input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+            <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-lg btn-block" style="margin-top:var(--sp-4);">Konto erstellen</button>
+</form>
+
+<div class="divider"></div>
+<p class="small text-muted" style="margin:0;">
+    Bereits registriert? <a asp-page="/Account/Login">Zur Anmeldung</a>
+</p>

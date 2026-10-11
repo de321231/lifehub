@@ -1,0 +1,170 @@
+@page
+@model DetailsModel
+@{
+    var summary = Model.Summary!;
+    var isOwner = summary.Role == OrganizationRole.Owner;
+    var canManage = summary.CanManage;
+}
+
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn btn-secondary" asp-page="/Organizations/Index">
+        <svg aria-hidden="true"><use href="#i-arrow-left"/></svg> Alle Bereiche
+    </a>
+    @if (canManage && !summary.IsPersonal)
+    {
+        <span class="badge badge-brand">@Ui.RoleText(summary.Role)</span>
+    }
+</div>
+
+@if (!Model.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+    </div>
+}
+
+<div class="grid grid-dashboard" style="align-items:start;">
+    <div class="grid" style="gap:var(--sp-4);">
+        <section class="card">
+            <div class="card-header">
+                <h2>@summary.Name</h2>
+                <div class="card-actions">
+                    @if (summary.IsPersonal)
+                    {
+                        <span class="badge badge-outline">Persönlicher Bereich</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-neutral">@Ui.RoleText(summary.Role)</span>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <dl class="kv">
+                    <dt>Mitglieder</dt>
+                    <dd>@summary.MemberCount</dd>
+                    <dt>Kennung</dt>
+                    <dd><code>@summary.Slug</code></dd>
+                    <dt>Ihre Rolle</dt>
+                    <dd>@Ui.RoleText(summary.Role)</dd>
+                </dl>
+            </div>
+        </section>
+
+        @if (canManage && !summary.IsPersonal)
+        {
+            <section class="card">
+                <div class="card-header">
+                    <h2>Bereich umbenennen</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="Rename" asp-route-id="@Model.Id" novalidate>
+                        <div class="form-grid" style="grid-template-columns:minmax(0,1fr) auto;">
+                            <div class="field">
+                                <label asp-for="RenameInput.Name">Name</label>
+                                <input asp-for="RenameInput.Name" value="@summary.Name" />
+                                <span asp-validation-for="RenameInput.Name" class="field-error"></span>
+                            </div>
+                            <div class="field" style="align-self:end;">
+                                <button type="submit" class="btn">Speichern</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2>Mitglied hinzufügen</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="AddMember" asp-route-id="@Model.Id" novalidate>
+                        <div class="form-grid" style="grid-template-columns:minmax(0,1fr);">
+                            <div class="field">
+                                <label asp-for="AddMemberInput.Email">E-Mail-Adresse</label>
+                                <input asp-for="AddMemberInput.Email" type="email" placeholder="name@beispiel.de" />
+                                <span asp-validation-for="AddMemberInput.Email" class="field-error"></span>
+                                <span class="hint">Es muss bereits ein Benutzerkonto existieren.</span>
+                            </div>
+                            <div class="field">
+                                <label asp-for="AddMemberInput.Role">Rolle</label>
+                                <select asp-for="AddMemberInput.Role">
+                                    <option value="@OrganizationRole.Member">@Ui.RoleText(OrganizationRole.Member)</option>
+                                    <option value="@OrganizationRole.Manager">@Ui.RoleText(OrganizationRole.Manager)</option>
+                                </select>
+                                <span class="hint">
+                                    Mitglieder sehen die geteilten Inhalte; Manager können zusätzlich Inhalte verwalten.
+                                    Der Eigentümerstatus bleibt Ihnen vorbehalten.
+                                </span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn" style="margin-top:var(--sp-3);">
+                            <svg aria-hidden="true"><use href="#i-plus"/></svg> Mitglied hinzufügen
+                        </button>
+                    </form>
+                </div>
+            </section>
+        }
+    </div>
+
+    <section class="card">
+        <div class="card-header">
+            <h2>Mitglieder · @summary.MemberCount</h2>
+        </div>
+        <div class="card-body tight">
+            @if (Model.Members.Count == 0)
+            {
+                <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                    <div class="empty-icon"><svg aria-hidden="true"><use href="#i-users"/></svg></div>
+                    <h3>Keine Mitglieder</h3>
+                </div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var m in Model.Members)
+                    {
+                        <li class="list-item">
+                            <svg class="nav-icon" aria-hidden="true"><use href="#i-users"/></svg>
+                            <div class="list-main">
+                                <span class="list-title">
+                                    @m.DisplayName
+                                    @if (m.IsSelf) { <span class="badge badge-info">Sie</span> }
+                                    @if (!m.IsActive) { <span class="badge badge-warning">Deaktiviert</span> }
+                                </span>
+                                <span class="list-meta">
+                                    <span>@m.Email</span>
+                                    <span>Mitglied seit @Model.Local(m.JoinedAt, "dd.MM.yyyy")</span>
+                                </span>
+                            </div>
+                            <div class="list-actions">
+                                <span class="badge @(m.Role == OrganizationRole.Owner ? "badge-brand" : m.Role == OrganizationRole.Manager ? "badge-info" : "badge-neutral")">
+                                    @Ui.RoleText(m.Role)
+                                </span>
+                                @if (isOwner && !m.IsSelf && m.Role != OrganizationRole.Owner)
+                                {
+                                    <form method="post" asp-page-handler="ChangeRole" asp-route-id="@Model.Id" asp-route-memberId="@m.UserId" asp-route-role="@OrganizationRole.Manager" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-ghost" title="Zum Manager machen">Manager</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="ChangeRole" asp-route-id="@Model.Id" asp-route-memberId="@m.UserId" asp-route-role="@OrganizationRole.Member" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-ghost" title="Zum Mitglied machen">Mitglied</button>
+                                    </form>
+                                }
+                                @if ((isOwner && !m.IsSelf) || m.IsSelf)
+                                {
+                                    <form method="post" asp-page-handler="RemoveMember" asp-route-id="@Model.Id" asp-route-memberId="@m.UserId" style="display:inline;"
+                                          data-confirm="@(m.IsSelf ? "Bereich wirklich verlassen?" : "Diese Person wirklich aus dem Bereich entfernen?")">
+                                        <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="@(m.IsSelf ? "Verlassen" : "Entfernen")">
+                                            <svg aria-hidden="true"><use href="#i-x"/></svg>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </section>
+</div>

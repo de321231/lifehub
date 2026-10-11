@@ -1,0 +1,150 @@
+@page
+@model IndexModel
+@{
+    var now = DateTimeOffset.UtcNow;
+}
+
+<div class="grid grid-dashboard">
+    <div class="grid" style="gap:var(--sp-4);">
+        <section class="card">
+            <div class="card-header">
+                <h2>Aufgaben- und Termin-Erinnerungen</h2>
+            </div>
+            <div class="card-body tight">
+                @if (Model.Upcoming.Count == 0)
+                {
+                    <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                        <div class="empty-icon"><svg aria-hidden="true"><use href="#i-bell"/></svg></div>
+                        <h3>Keine offenen Erinnerungen</h3>
+                        <p>Erinnerungen entstehen automatisch aus Aufgaben und Terminen. Hier können Sie zusätzlich eigene Erinnerungen anlegen.</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="list">
+                        @foreach (var r in Model.Upcoming)
+                        {
+                            var overdue = r.RemindAt <= now;
+                            <li class="list-item">
+                                <svg class="nav-icon @(overdue ? "text-danger" : "")" aria-hidden="true"><use href="#i-bell"/></svg>
+                                <div class="list-main">
+                                    <span class="list-title">
+                                        @r.Title
+                                        @if (overdue) { <span class="badge badge-danger">fällig jetzt</span> }
+                                        else { <span class="badge badge-neutral">@Ui.ReminderStatusText(r.Status)</span> }
+                                    </span>
+                                    <span class="list-meta">
+                                        <span>Auslösung: @Model.Local(r.RemindAt, "dd.MM.yyyy HH:mm")</span>
+                                        @if (r.TaskItemId.HasValue) { <a asp-page="/Tasks/Details" asp-route-id="@r.TaskItemId.Value">Aufgabe</a> }
+                                        @if (r.CalendarEventId.HasValue) { <a asp-page="/Calendar/Details" asp-route-id="@r.CalendarEventId.Value">Termin</a> }
+                                    </span>
+                                    @if (!string.IsNullOrWhiteSpace(r.Message))
+                                    {
+                                        <span class="small text-muted" style="margin-top:2px;">@r.Message</span>
+                                    }
+                                </div>
+                                <div class="list-actions">
+                                    @if (overdue)
+                                    {
+                                        <form method="post" asp-page-handler="Dismiss" asp-route-id="@r.Id" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm">Als erledigt markieren</button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Snooze" asp-route-id="@r.Id" asp-route-minutes="15" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-secondary">+ 15 Min.</button>
+                                        </form>
+                                    }
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@r.Id" style="display:inline;"
+                                          data-confirm="Diese Erinnerung wirklich löschen?">
+                                        <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="Löschen">
+                                            <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h2>Vergangene Erinnerungen</h2>
+            </div>
+            <div class="card-body tight">
+                @if (Model.History.Count == 0)
+                {
+                    <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                        <div class="empty-icon"><svg aria-hidden="true"><use href="#i-clock"/></svg></div>
+                        <h3>Noch keine ausgelösten Erinnerungen</h3>
+                        <p>Hier landen Erinnerungen, die ausgelöst und erledigt wurden.</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="list">
+                        @foreach (var r in Model.History)
+                        {
+                            <li class="list-item">
+                                <svg class="nav-icon text-muted" aria-hidden="true"><use href="#i-clock"/></svg>
+                                <div class="list-main">
+                                    <span class="list-title">
+                                        @r.Title
+                                        <span class="badge @Model.StatusBadge(r.Status)">@Model.StatusText(r.Status)</span>
+                                    </span>
+                                    <span class="list-meta">
+                                        <span>@Model.Local(r.RemindAt, "dd.MM.yyyy HH:mm")</span>
+                                    </span>
+                                </div>
+                                <div class="list-actions">
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@r.Id" style="display:inline;"
+                                          data-confirm="Diesen Eintrag wirklich löschen?">
+                                        <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="Löschen">
+                                            <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+    </div>
+
+    <section class="card" style="align-self:start;">
+        <div class="card-header">
+            <h2>Neue Erinnerung</h2>
+        </div>
+        <div class="card-body">
+            @if (!Model.ModelState.IsValid)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+                    <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+                </div>
+            }
+
+            <form method="post" asp-page-handler="Create" novalidate>
+                <div class="form-grid" style="grid-template-columns:minmax(0,1fr);">
+                    <div class="field">
+                        <label asp-for="Input.Title">Titel</label>
+                        <input asp-for="Input.Title" autofocus />
+                        <span asp-validation-for="Input.Title" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.Message">Nachricht (optional)</label>
+                        <input asp-for="Input.Message" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.RemindAt">Zeitpunkt</label>
+                        <input asp-for="Input.RemindAt" type="datetime-local" />
+                        <span class="hint">In Ihrer Zeitzone (@Model.ShellTimeZoneId)</span>
+                        <span asp-validation-for="Input.RemindAt" class="field-error"></span>
+                    </div>
+                </div>
+                <button type="submit" class="btn" style="margin-top:var(--sp-3);">Erinnerung anlegen</button>
+            </form>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,83 @@
+@page
+@model CalendarIndexModel
+@{
+    string[] weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+}
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn" asp-page="/Calendar/Create">
+        <svg aria-hidden="true"><use href="#i-calendar-plus"/></svg> Neuer Termin
+    </a>
+    <div class="cal-legend" aria-hidden="true">
+        @foreach (var color in Ui.EventColors)
+        {
+            <span class="cal-legend-item"><span class="cal-dot cat-@color"></span>@Ui.ColorLabel(color)</span>
+        }
+    </div>
+</div>
+
+<div class="cal-toolbar">
+    <div class="cal-nav">
+        <a class="btn btn-sm btn-secondary" asp-page="/Calendar/Index" asp-route-year="@Model.PrevYear" asp-route-month="@Model.PrevMonth" aria-label="Vorheriger Monat">
+            <svg aria-hidden="true"><use href="#i-arrow-left"/></svg>
+        </a>
+        <a class="btn btn-sm btn-secondary" asp-page="/Calendar/Index" aria-label="Zum heutigen Monat">Heute</a>
+        <a class="btn btn-sm btn-secondary" asp-page="/Calendar/Index" asp-route-year="@Model.NextYear" asp-route-month="@Model.NextMonth" aria-label="Nächster Monat">
+            <svg aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </a>
+    </div>
+    <span class="cal-title">@Model.MonthTitle</span>
+    <div class="cal-mode" style="margin-left:auto;">
+        <a asp-page="/Calendar/Index" asp-route-year="@Model.Year" asp-route-month="@Model.Month" class="active">Monat</a>
+        <a asp-page="/Calendar/Week" asp-route-year="@Model.Year" asp-route-month="@Model.Month" asp-route-day="1">Woche</a>
+        <a asp-page="/Calendar/Day" asp-route-year="@Model.Year" asp-route-month="@Model.Month">Tag</a>
+    </div>
+</div>
+
+<section class="card" style="padding:var(--sp-3);" data-calendar-month>
+    <div class="cal-month">
+        @foreach (var wd in weekdays)
+        {
+            <div class="cal-month-head">@wd</div>
+        }
+        @foreach (var d in Model.Days)
+        {
+            <div class="cal-day @(d.IsOtherMonth ? "other-month" : "") @(d.IsToday ? "today" : "")"
+                 data-cal-date="@d.Date.ToString("yyyy-MM-dd")">
+                <div class="cal-day-head">
+                    <span class="cal-day-num">@d.DayNumber</span>
+                    @if (d.Events.Count + d.DueTasks.Count > 3)
+                    {
+                        <a class="cal-more" asp-page="/Calendar/Day" asp-route-year="@d.Date.Year" asp-route-month="@d.Date.Month" asp-route-day="@d.Date.Day">@(d.Events.Count + d.DueTasks.Count) ansehen</a>
+                    }
+                </div>
+                @foreach (var t in d.DueTasks.Take(3))
+                {
+                    <a class="cal-chip task" asp-page="/Tasks/Details" asp-route-id="@t.Id" title="@t.Title">
+                        @if (t.DueAt is { } due)
+                        {
+                            <text>@Model.Local(due, "HH:mm") </text>
+                        }@t.Title
+                    </a>
+                }
+                @foreach (var e in d.Events.Take(3))
+                {
+                    <a class="cal-chip @(e.IsAllDay ? "allday" : "") @Ui.ColorClass(e.ColorCategory)"
+                       asp-page="/Calendar/Details" asp-route-id="@e.Id" title="@e.Title"
+                       draggable="@(e.IsRecurring ? "false" : "true")"
+                       data-event-id="@e.Id"
+                       data-event-start="@e.StartsAt.ToString("o")">
+                        @if (e.IsRecurring)
+                        {
+                            <svg class="chip-icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+                        }
+                        @if (!e.IsAllDay)
+                        {
+                            <text>@Model.Local(e.StartsAt, "HH:mm") </text>
+                        }@e.Title
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</section>
+<p class="hint" style="margin-top:var(--sp-2);">Tipp: Ziehen Sie einen Termin auf einen anderen Tag, um ihn zu verschieben.</p>

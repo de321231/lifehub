@@ -1,0 +1,219 @@
+@page
+@model LicensesModel
+@using DESD.LifeHub.Core.Enums
+@using DESD.LifeHub.Infrastructure.Licensing
+
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn btn-secondary" asp-page="/Admin/Index">
+        <svg aria-hidden="true"><use href="#i-arrow-left"/></svg> Übersicht
+    </a>
+</div>
+
+@if (!Model.AdminApiConfigured)
+{
+    <div class="alert alert-warning" role="alert" style="margin-bottom:var(--sp-4);">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body">
+            <strong>OpenLicensd-Admin-API nicht konfiguriert.</strong>
+            Ohne API-Token (<code>OpenLicensd__ApiToken</code>) lassen sich keine Firmen-Kontingente erzeugen.
+            Die Lizenzprüfung funktioniert weiterhin.
+        </div>
+    </div>
+}
+
+<section class="card">
+    <div class="card-header">
+        <h2>Firmen &amp; Lizenzkontingente</h2>
+    </div>
+    <div class="card-body tight">
+        @if (Model.Companies.Count == 0)
+        {
+            <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                <div class="empty-icon"><svg aria-hidden="true"><use href="#i-users"/></svg></div>
+                <h3>Keine Firmen vorhanden</h3>
+                <p class="text-muted">Legen Sie zuerst eine Organisation (Firma) an.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Firma</th>
+                            <th scope="col">Mitglieder</th>
+                            <th scope="col">Gültige Lizenzen</th>
+                            <th scope="col">Pool gesamt</th>
+                            <th scope="col">Pool frei</th>
+                            <th scope="col">Firmenverwaltung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Companies)
+                        {
+                            <tr>
+                                <td class="strong">@c.Name<div class="tiny text-muted">/@c.Slug</div></td>
+                                <td>@c.MemberCount</td>
+                                <td>@c.LicensedUsers</td>
+                                <td>@c.PoolTotal</td>
+                                <td>@c.PoolFree</td>
+                                <td>
+                                    <a class="btn btn-sm btn-ghost" asp-page="/CompanyAdmin/Index" asp-route-slug="@c.Slug">Öffnen</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>
+
+<section class="card" style="margin-top:var(--sp-4);">
+    <div class="card-header">
+        <h2>Firmenlizenzen erzeugen</h2>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Generate" class="grid" style="gap:var(--sp-3);">
+            <div class="grid grid-2" style="gap:var(--sp-3);">
+                <div class="field">
+                    <label asp-for="Generate.OrganizationId">Firma</label>
+                    <select asp-for="Generate.OrganizationId">
+                        <option value="">– bitte wählen –</option>
+                        @foreach (var c in Model.Companies)
+                        {
+                            <option value="@c.OrganizationId">@c.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Generate.OrganizationId" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Generate.Count">Anzahl</label>
+                    <input asp-for="Generate.Count" type="number" min="1" max="500" />
+                    <span asp-validation-for="Generate.Count" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Generate.ExpiresAt">Ablaufdatum (optional)</label>
+                    <input asp-for="Generate.ExpiresAt" type="date" />
+                    <span asp-validation-for="Generate.ExpiresAt" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Generate.MaxActivations">Aktivierungen pro Lizenz</label>
+                    <input asp-for="Generate.MaxActivations" type="number" min="1" max="100" />
+                    <span asp-validation-for="Generate.MaxActivations" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Generate.LabelPrefix">Bezeichnung (optional)</label>
+                    <input asp-for="Generate.LabelPrefix" type="text" placeholder="z. B. LifeHub Acme" />
+                    <span asp-validation-for="Generate.LabelPrefix" class="field-error"></span>
+                </div>
+            </div>
+            <div>
+                <button type="submit" class="btn" disabled="@(Model.AdminApiConfigured ? null : "disabled")">
+                    <svg aria-hidden="true"><use href="#i-plus"/></svg> Lizenzen erzeugen
+                </button>
+            </div>
+        </form>
+        <p class="tiny text-muted" style="margin-top:var(--sp-2);">
+            Die Schlüssel werden über die OpenLicensd-Admin-API erzeugt und nur verschlüsselt gespeichert.
+            Der Rohschlüssel verlässt den Server nicht.
+        </p>
+    </div>
+</section>
+
+<section class="card" style="margin-top:var(--sp-4);">
+    <div class="card-header">
+        <h2>Benutzerlizenzen</h2>
+        <div class="card-actions tiny text-muted">@Model.Rows.Count Einträge</div>
+    </div>
+    <div class="card-body tight">
+        <form method="get" class="filter-bar">
+            <div class="field grow">
+                <label asp-for="Search">Suche</label>
+                <input asp-for="Search" type="search" placeholder="Name oder E-Mail …" />
+            </div>
+            <div class="field" style="align-self:flex-end;">
+                <label style="display:flex;align-items:center;gap:var(--sp-1);">
+                    <input asp-for="OnlyMissing" type="checkbox" value="true" data-autosubmit />
+                    Nur ohne gültige Lizenz
+                </label>
+            </div>
+            <div class="field">
+                <button type="submit" class="btn">Filtern</button>
+            </div>
+        </form>
+
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                <div class="empty-icon"><svg aria-hidden="true"><use href="#i-key"/></svg></div>
+                <h3>Keine passenden Benutzer</h3>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Benutzer</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Schlüssel</th>
+                            <th scope="col">Richtlinie</th>
+                            <th scope="col">Läuft ab</th>
+                            <th scope="col">Letzte Prüfung</th>
+                            <th scope="col">Fehler</th>
+                            <th scope="col">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Rows)
+                        {
+                            <tr>
+                                <td class="strong">@r.DisplayName<div class="tiny text-muted">@r.Email</div></td>
+                                <td>
+                                    <span class="badge @Model.StatusBadge(r.Status)">@Model.StatusText(r.Status)</span>
+                                    @if (r.InGracePeriod)
+                                    {
+                                        <span class="badge badge-warning">Kulanz</span>
+                                    }
+                                </td>
+                                <td class="tiny">@(r.MaskedKey ?? "–")</td>
+                                <td class="tiny">@(r.PolicyName ?? "–")</td>
+                                <td class="tiny">@(r.ExpiresAt is { } exp ? Model.Local(exp, "dd.MM.yyyy") : "–")</td>
+                                <td class="tiny">@(r.LastValidatedAt is { } lv ? Model.Local(lv, "dd.MM.yyyy HH:mm") : "–")</td>
+                                <td class="tiny text-muted">
+                                    @if (!string.IsNullOrWhiteSpace(r.LastError))
+                                    {
+                                        <span title="@r.LastError">@(r.LastError!.Length > 40 ? r.LastError[..40] + "…" : r.LastError)</span>
+                                        @if (r.ConsecutiveTransientFailures > 1)
+                                        {
+                                            <span class="badge badge-warning">@r.ConsecutiveTransientFailures×</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <text>–</text>
+                                    }
+                                </td>
+                                <td>
+                                    <div style="display:flex;gap:var(--sp-1);flex-wrap:wrap;">
+                                        @if (r.HasLicense)
+                                        {
+                                            <form method="post" asp-page-handler="Revalidate" asp-route-id="@r.UserId" style="display:inline;">
+                                                <button type="submit" class="btn btn-sm btn-secondary">Neu prüfen</button>
+                                            </form>
+                                            <form method="post" asp-page-handler="Remove" asp-route-id="@r.UserId" style="display:inline;">
+                                                <button type="submit" class="btn btn-sm btn-ghost">Entfernen</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

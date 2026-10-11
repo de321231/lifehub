@@ -1,0 +1,18 @@
+@page "/Account/WorkspaceSelector"
+@model WorkspaceSelectorModel
+
+<h3>Arbeitsplatz auswählen</h3>
+
+<p>Wählen Sie Ihren Arbeitsplatz aus:</p>
+<ul>
+  @foreach (var ws in Model.Workspaces)
+  {
+    <li>
+      <strong>@ws.Name</strong> (@ws.Type)
+      <span class="badge badge-primary">@ws.Type</span>
+      <a href="@Url.Page("/Dashboard", new { slug = ws.CompanyId })" class="btn btn-secondary">→</a>
+    </li>
+  }
+</ul>
+
+<p><em>Wenn Sie nur einen Arbeitsplatz haben, werden Sie automatisch zur entsprechenden Seite weitergeleitet.</em></p>

@@ -1,0 +1,242 @@
+@page
+@model DetailsModel
+@{
+    var t = Model.Task!;
+    var now = DateTimeOffset.UtcNow;
+    var orgName = Model.OrgName(t);
+    var assignee = Model.AssigneeName(t);
+}
+
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn btn-secondary" asp-page="/Tasks/Index">
+        <svg aria-hidden="true"><use href="#i-arrow-left"/></svg> Zur Liste
+    </a>
+    @if (Model.CanEdit)
+    {
+        <a class="btn" asp-page="/Tasks/Edit" asp-route-id="@t.Id">
+            <svg aria-hidden="true"><use href="#i-edit"/></svg> Bearbeiten
+        </a>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@t.Id" style="display:inline;"
+              data-confirm="Diese Aufgabe wirklich löschen?">
+            <button type="submit" class="btn btn-danger-outline">
+                <svg aria-hidden="true"><use href="#i-trash"/></svg> Löschen
+            </button>
+        </form>
+    }
+</div>
+
+<div class="grid grid-dashboard" style="margin-top:var(--sp-4);">
+    <div class="grid" style="gap:var(--sp-4);">
+        <section class="card">
+            <div class="card-header">
+                <h2 style="font-size:var(--fs-lg);">@t.Title</h2>
+                <div class="card-actions">
+                    <span class="badge @Ui.StatusBadge(t.Status)">@Ui.StatusText(t.Status)</span>
+                    @if (t.IsOverdue(now))
+                    {
+                        <span class="badge badge-danger">überfällig</span>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="kv">
+                    <dt>Status</dt>
+                    <dd><span class="badge @Ui.StatusBadge(t.Status)">@Ui.StatusText(t.Status)</span></dd>
+                    <dt>Priorität</dt>
+                    <dd>
+                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                            <span class="dot-priority @Ui.PriorityDotClass(t.Priority)"></span>@Ui.PriorityText(t.Priority)
+                        </span>
+                    </dd>
+                    <dt>Fälligkeit</dt>
+                    <dd>
+                        @if (t.DueAt is { } due)
+                        {
+                            <span class="@(t.IsOverdue(now) ? "text-danger" : "")">@Model.Local(due)</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Keine</span>
+                        }
+                    </dd>
+                    <dt>Bereich</dt>
+                    <dd>
+                        @if (t.OrganizationId.HasValue)
+                        {
+                            <span>@orgName</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-outline">Privat</span>
+                        }
+                    </dd>
+                    <dt>Zugewiesen an</dt>
+                    <dd>@assignee</dd>
+                    @if (!string.IsNullOrWhiteSpace(t.Category))
+                    {
+                        <dt>Kategorie</dt>
+                        <dd>@t.Category</dd>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(t.Tags))
+                    {
+                        <dt>Schlagwörter</dt>
+                        <dd class="tag-list">
+                            @foreach (var tag in Ui.SplitTags(t.Tags))
+                            {
+                                <a class="tag" asp-page="/Tasks/Index" asp-route-tag="@tag">@tag</a>
+                            }
+                        </dd>
+                    }
+                    <dt>Erstellt</dt>
+                    <dd>@Model.Local(t.CreatedAt)</dd>
+                    @if (t.CompletedAt is { } done)
+                    {
+                        <dt>Erledigt</dt>
+                        <dd>@Model.Local(done)</dd>
+                    }
+                    else if (t.UpdatedAt is { } updated)
+                    {
+                        <dt>Geändert</dt>
+                        <dd>@Model.Local(updated)</dd>
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(t.Description))
+                {
+                    <div class="divider"></div>
+                    <h3 style="margin-bottom:var(--sp-2);">Beschreibung</h3>
+                    <p style="white-space:pre-wrap;line-height:1.6;">@t.Description</p>
+                }
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h2>Anhänge</h2>
+                <div class="card-actions">
+                    <form method="post" asp-page-handler="UploadAttachment" asp-route-id="@t.Id" enctype="multipart/form-data" class="inline-form">
+                        <input type="file" name="file" required />
+                        <button type="submit" class="btn btn-sm">Hochladen</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body tight">
+                @if (Model.Attachments.Count == 0)
+                {
+                    <div class="empty" style="padding:var(--sp-4);">
+                        <p class="muted">Noch keine Anhänge vorhanden.</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="list">
+                        @foreach (var a in Model.Attachments)
+                        {
+                            <li class="list-item">
+                                <svg class="nav-icon" aria-hidden="true"><use href="#i-note"/></svg>
+                                <div class="list-main">
+                                    <span class="list-title">@a.FileName</span>
+                                    <span class="list-meta">@((a.SizeBytes/1024.0).ToString("0.#")) KB · @a.ContentType · @Model.Local(a.CreatedAt)</span>
+                                </div>
+                                <div class="list-actions">
+                                    <form method="post" asp-page-handler="DeleteAttachment" asp-route-id="@t.Id" asp-route-attachmentId="@a.Id" data-confirm="Anhang wirklich entfernen?">
+                                        <button type="submit" class="btn btn-sm btn-danger-outline">Löschen</button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h2>Kommentare (@Model.Comments.Count)</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="AddComment" asp-route-id="@t.Id" class="stack" style="margin-bottom:var(--sp-3);">
+                    <label asp-for="CommentBody" class="sr-only">Kommentar</label>
+                    <textarea asp-for="CommentBody" rows="2" placeholder="Kommentar schreiben …"></textarea>
+                    <div class="btn-group" style="justify-content:flex-end;">
+                        <button type="submit" class="btn btn-sm">Kommentar senden</button>
+                    </div>
+                </form>
+
+                @if (Model.Comments.Count == 0)
+                {
+                    <p class="muted">Noch keine Kommentare.</p>
+                }
+                else
+                {
+                    <ul class="list">
+                        @foreach (var c in Model.Comments)
+                        {
+                            <li class="list-item">
+                                <div class="list-main">
+                                    <span class="list-title">@(c.Author?.DisplayName ?? "Unbekannt")</span>
+                                    <span class="list-meta">@Model.Local(c.CreatedAt)</span>
+                                    <p style="white-space:pre-wrap;margin-top:var(--sp-1);">@c.Body</p>
+                                </div>
+                                <div class="list-actions">
+                                    <form method="post" asp-page-handler="DeleteComment" asp-route-id="@t.Id" asp-route-commentId="@c.Id" data-confirm="Kommentar wirklich löschen?">
+                                        <button type="submit" class="btn btn-sm btn-ghost">Löschen</button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+    </div>
+
+    <div class="grid" style="gap:var(--sp-4);">
+        <section class="card">
+            <div class="card-header">
+                <h2>Notizen</h2>
+                <div class="card-actions">
+                    <a class="btn btn-sm btn-secondary" asp-page="/Notes/Create" asp-route-taskid="@t.Id">Notiz hinzufügen</a>
+                </div>
+            </div>
+            <div class="card-body tight">
+                @if (t.Notes.Count == 0)
+                {
+                    <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                        <div class="empty-icon"><svg aria-hidden="true"><use href="#i-note"/></svg></div>
+                        <h3>Keine Notizen zu dieser Aufgabe</h3>
+                        <p>Halten Sie Zwischenstände, Ideen oder Besprechungsergebnisse direkt bei der Aufgabe fest.</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="list">
+                        @foreach (var n in t.Notes)
+                        {
+                            <li class="list-item">
+                                <svg class="nav-icon" aria-hidden="true"><use href="#i-note"/></svg>
+                                <div class="list-main">
+                                    <span class="list-title">
+                                        @if (n.OwnerUserId == Model.UserIdValue)
+                                        {
+                                            <a asp-page="/Notes/Edit" asp-route-id="@n.Id">@n.Title</a>
+                                        }
+                                        else
+                                        {
+                                            <span>@n.Title</span>
+                                        }
+                                        @if (n.OwnerUserId != Model.UserIdValue)
+                                        {
+                                            <span class="badge badge-outline">geteilt</span>
+                                        }
+                                    </span>
+                                    <span class="list-meta"><span>@Model.Local(n.UpdatedAt ?? n.CreatedAt)</span></span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+    </div>
+</div>

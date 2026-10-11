@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DESD.LifeHub.Core/DESD.LifeHub.Core.csproj" />
+    <Project Path="src/DESD.LifeHub.Infrastructure/DESD.LifeHub.Infrastructure.csproj" />
+    <Project Path="src/DESD.LifeHub.Web/DESD.LifeHub.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DESD.LifeHub.Tests/DESD.LifeHub.Tests.csproj" />
+  </Folder>
+</Solution>

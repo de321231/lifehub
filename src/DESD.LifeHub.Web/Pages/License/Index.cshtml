@@ -1,0 +1,182 @@
+@page
+@model LicenseIndexModel
+@{
+    ViewData["Title"] = "Lizenz";
+    var v = Model.View;
+}
+<div class="grid grid-dashboard" style="grid-template-columns:minmax(0,600px) minmax(0,1fr);">
+    <section class="card">
+        <div class="card-header">
+            <h2>Ihre Lizenz</h2>
+            <div class="card-actions">
+                <span class="badge @Ui.LicenseBadge(v?.Status ?? LicenseStatus.None)">@(v?.StatusLabel ?? "Unbekannt")</span>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.NewAccount)
+            {
+                <div class="alert alert-info" role="alert">
+                    <svg aria-hidden="true"><use href="#i-info"/></svg>
+                    <div class="alert-body">
+                        Willkommen! Um loszulegen, hinterlegen Sie hier Ihren persönlichen Lizenzschlüssel.
+                        Jedes Konto benötigt eine eigene Lizenz – Schlüssel sind nicht zwischen Konten teilbar.
+                    </div>
+                </div>
+            }
+
+            @if (Model.Reason == "invalid" && v is { HasLicense: true })
+            {
+                <div class="alert alert-danger" role="alert">
+                    <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+                    <div class="alert-body">
+                        Der Zugriff ist gesperrt, weil die Lizenz nicht bestätigt werden konnte.
+                        Bitte prüfen Sie den Status unten oder hinterlegen Sie einen gültigen Schlüssel.
+                    </div>
+                </div>
+            }
+
+            @if (!Model.ModelState.IsValid)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+                    <div class="alert-body">
+                        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+                    </div>
+                </div>
+            }
+
+            @if (v is null || !v.HasLicense)
+            {
+                <p class="text-muted">
+                    Für dieses Konto ist noch kein Lizenzschlüssel hinterlegt. Der Schlüssel wird
+                    ausschliesslich auf dem Server gespeichert (verschlüsselt) und niemals an Ihren
+                    Browser zurückgegeben.
+                </p>
+
+                <form method="post" asp-page-handler="Activate" novalidate>
+                    <div class="field">
+                        <label asp-for="Input.LicenseKey">Lizenzschlüssel</label>
+                        <input asp-for="Input.LicenseKey" autocomplete="off" spellcheck="false"
+                               class="mono" style="letter-spacing:0.04em;"
+                               placeholder="XXXXX-XXXXX-XXXXX-XXXXX" autofocus />
+                        <span class="hint">Den Schlüssel finden Sie in Ihrer Bestellung bzw. Lizenzmail von DESD.</span>
+                        <span asp-validation-for="Input.LicenseKey" class="field-error"></span>
+                    </div>
+                    <div class="btn-group" style="margin-top:var(--sp-4);">
+                        <button type="submit" class="btn btn-lg">Lizenz aktivieren</button>
+                        <span class="small text-muted" style="align-self:center;">Die Prüfung erfolgt bei <span class="mono">license.desd.uk</span>.</span>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="kv">
+                    <dt>Schlüssel</dt>
+                    <dd><span class="mono">@v.MaskedKey</span></dd>
+                    <dt>Status</dt>
+                    <dd>@v.StatusLabel</dd>
+                    @if (!string.IsNullOrWhiteSpace(v.PolicyName))
+                    {
+                        <dt>Richtlinie</dt>
+                        <dd>@v.PolicyName</dd>
+                    }
+                    @if (v.ExpiresAt is { } expires)
+                    {
+                        <dt>Gültig bis</dt>
+                        <dd>@Model.Local(expires, "dd.MM.yyyy HH:mm 'Uhr'")</dd>
+                    }
+                    @if (v.ActivationCount is { } count && v.MaxActivations is { } max)
+                    {
+                        <dt>Aktivierungen</dt>
+                        <dd>@count / @max</dd>
+                    }
+                    @if (v.LastValidatedAt is { } validated)
+                    {
+                        <dt>Zuletzt bestätigt</dt>
+                        <dd>@Model.Local(validated)</dd>
+                    }
+                    @if (v.LastAttemptAt is { } attempted)
+                    {
+                        <dt>Letzte Prüfung</dt>
+                        <dd>@Model.Local(attempted)</dd>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(v.LastError))
+                    {
+                        <dt>Diagnose</dt>
+                        <dd class="text-muted small">@v.LastError</dd>
+                    }
+                    @if (v.ServingFromLocalGrace)
+                    {
+                        <dt>Hinweis</dt>
+                        <dd class="text-warning">Zugriff läuft über die lokale Kulanzfrist.</dd>
+                    }
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="btn-group">
+                    <form method="post" asp-page-handler="Revalidate" style="display:inline;">
+                        <button type="submit" class="btn btn-secondary">
+                            <svg aria-hidden="true"><use href="#i-refresh"/></svg>
+                            Erneut prüfen
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-ghost" data-toggle-target="#change-key-panel" aria-expanded="false">
+                        Schlüssel ändern
+                    </button>
+                    <form method="post" asp-page-handler="Remove" style="display:inline;"
+                          data-confirm="Möchten Sie den Lizenzschlüssel wirklich von Ihrem Konto entfernen? Ein erneuter Zugriff ist erst nach erneuter Aktivierung möglich.">
+                        <button type="submit" class="btn btn-danger-outline">Lizenz entfernen</button>
+                    </form>
+                </div>
+
+                <div id="change-key-panel" class="collapse" style="margin-top:var(--sp-4);">
+                    <form method="post" asp-page-handler="Activate" novalidate>
+                        <div class="field">
+                            <label asp-for="Input.LicenseKey">Neuer Lizenzschlüssel</label>
+                            <input asp-for="Input.LicenseKey" autocomplete="off" spellcheck="false"
+                                   class="mono" style="letter-spacing:0.04em;" />
+                            <span class="hint">Der bisherige Schlüssel wird ersetzt.</span>
+                            <span asp-validation-for="Input.LicenseKey" class="field-error"></span>
+                        </div>
+                        <button type="submit" class="btn" style="margin-top:var(--sp-2);">Schlüssel übernehmen</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </section>
+
+    <aside>
+        <section class="card">
+            <div class="card-header"><h3>So funktioniert es</h3></div>
+            <div class="card-body">
+                <ul class="list" style="display:flex;flex-direction:column;gap:var(--sp-3);font-size:var(--fs-sm);">
+                    <li class="list-item">
+                        <svg class="nav-icon" aria-hidden="true"><use href="#i-key"/></svg>
+                        <div class="list-main">
+                            <strong>1 Schlüssel pro Konto</strong>
+                            <span class="list-meta">Persönliche Lizenzen können nicht von mehreren Konten genutzt werden.</span>
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <svg class="nav-icon" aria-hidden="true"><use href="#i-shield"/></svg>
+                        <div class="list-main">
+                            <strong>Serverseitige Prüfung</strong>
+                            <span class="list-meta">Der Schlüssel wird vom Server bei OpenLicensd validiert – nie im Browser.</span>
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <svg class="nav-icon" aria-hidden="true"><use href="#i-clock"/></svg>
+                        <div class="list-main">
+                            <strong>Zwischenspeicherung &amp; Kulanzfrist</strong>
+                            <span class="list-meta">Gültige Ergebnisse werden zwischengespeichert; bei kurzfristiger Nichterreichbarkeit des Servers greift eine Kulanzfrist.</span>
+                        </div>
+                    </li>
+                </ul>
+                <p class="small text-muted mt-3">
+                    Fragen zur Lizenz? Weitere Details im <a asp-page="/License/ActivateHelp">Hilfebereich zur Aktivierung</a>.
+                </p>
+            </div>
+        </section>
+    </aside>
+</div>

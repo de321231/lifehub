@@ -1,0 +1,166 @@
+@page
+@model IndexModel
+@{
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+}
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn" asp-page="/Notes/Create">
+        <svg aria-hidden="true"><use href="#i-plus"/></svg> Neue Notiz
+    </a>
+</div>
+
+<section class="card">
+    <div class="card-header">
+        <h2 style="font-size:var(--fs-md);">Notizen filtern</h2>
+    </div>
+    <div class="card-body tight">
+        <form method="get" class="filter-bar">
+            <div class="field grow">
+                <label asp-for="Search">Suche</label>
+                <input asp-for="Search" type="search" placeholder="Titel, Inhalt oder Schlagwort …" />
+            </div>
+            <div class="field">
+                <label asp-for="Category">Kategorie</label>
+                <select asp-for="Category" data-autosubmit>
+                    <option value="">Alle</option>
+                    @foreach (var c in Model.Categories)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label class="check" style="padding-top:1.6rem;">
+                    <input type="checkbox" name="OnlyFavorites" value="true" checked="@Model.OnlyFavorites" data-autosubmit />
+                    <span class="check-text"><span class="check-title">Nur Favoriten</span></span>
+                </label>
+            </div>
+            <div class="field">
+                <label class="check" style="padding-top:1.6rem;">
+                    <input type="checkbox" name="IncludeArchived" value="true" checked="@Model.IncludeArchived" data-autosubmit />
+                    <span class="check-text"><span class="check-title">Archiv einbeziehen</span></span>
+                </label>
+            </div>
+            <div class="field">
+                <label class="check" style="padding-top:1.6rem;">
+                    <input type="checkbox" name="OnlyArchived" value="true" checked="@Model.OnlyArchived" data-autosubmit />
+                    <span class="check-text"><span class="check-title">Nur archiviert</span></span>
+                </label>
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-secondary">Filtern</button>
+                @if (Model.HasActiveFilter)
+                {
+                    <a class="btn btn-ghost" asp-page="/Notes/Index">Zurücksetzen</a>
+                }
+            </div>
+        </form>
+
+        @if (Model.Notes.Any(n => !string.IsNullOrWhiteSpace(n.Tags)))
+        {
+            var tags = Model.Notes.Where(n => !string.IsNullOrWhiteSpace(n.Tags))
+                .SelectMany(n => Ui.SplitTags(n.Tags))
+                .Distinct()
+                .OrderBy(t => t, StringComparer.Ordinal)
+                .ToList();
+            if (tags.Count > 0)
+            {
+                <div style="margin-top:var(--sp-3);display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                    <span class="small text-muted">Schlagwörter:</span>
+                    @foreach (var tag in tags)
+                    {
+                        <a class="tag" asp-page="/Notes/Index" asp-route-tag="@tag" asp-route-search="" asp-route-category="" asp-route-onlyfavorites="false" asp-route-includearchived="false" asp-route-onlyarchived="false">@tag</a>
+                    }
+                </div>
+            }
+        }
+    </div>
+</section>
+
+@if (Model.Notes.Count == 0)
+{
+    <div class="card" style="margin-top:var(--sp-4);">
+        <div class="empty">
+            <div class="empty-icon"><svg aria-hidden="true"><use href="#i-note"/></svg></div>
+            <h3>Keine Notizen gefunden</h3>
+            <p>
+                @if (Model.HasActiveFilter)
+                {
+                    <text>Keine Notizen passen auf die aktuellen Filter. Passen Sie die Filter an oder legen Sie eine neue Notiz an.</text>
+                }
+                else
+                {
+                    <text>Sie haben noch keine Notizen. Halten Sie Ideen, Listen und Informationen fest.</text>
+                }
+            </p>
+            <a class="btn" asp-page="/Notes/Create">Neue Notiz</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="note-grid" style="margin-top:var(--sp-4);">
+        @foreach (var n in Model.Notes)
+        {
+            <article class="card note-card @(n.IsArchived ? "is-archived" : "")" style="display:flex;flex-direction:column;">
+                <div class="card-header">
+                    <h2 class="note-card-title">
+                        <a asp-page="/Notes/Edit" asp-route-id="@n.Id">@n.Title</a>
+                    </h2>
+                    <div class="card-actions">
+                        @if (n.IsFavorite) { <span class="badge badge-brand" title="Favorit"><svg class="nav-icon" aria-hidden="true"><use href="#i-check"/></svg></span> }
+                        @if (n.IsArchived) { <span class="badge badge-neutral">Archiv</span> }
+                    </div>
+                </div>
+                <div class="card-body tight" style="flex:1;">
+                    <p class="note-excerpt" style="white-space:pre-wrap;">@NoteExcerpt(n.Content)</p>
+                    @if (!string.IsNullOrWhiteSpace(n.Category))
+                    {
+                        <div class="tiny text-muted" style="margin-top:var(--sp-2);">@n.Category</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(n.Tags))
+                    {
+                        <div class="tag-list" style="margin-top:var(--sp-2);">
+                            @foreach (var tag in Ui.SplitTags(n.Tags))
+                            {
+                                <a class="tag" asp-page="/Notes/Index" asp-route-tag="@tag">@tag</a>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="card-footer">
+                    <span class="small text-muted">@Model.Local(n.UpdatedAt ?? n.CreatedAt)</span>
+                    <div class="btn-group">
+                        <form method="post" asp-page-handler="ToggleFavorite" asp-route-id="@n.Id" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="@(n.IsFavorite ? "Als Favorit entfernen" : "Als Favorit markieren")">
+                                <svg aria-hidden="true"><use href="#i-check"/></svg>
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="ToggleArchive" asp-route-id="@n.Id" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="@(n.IsArchived ? "Wiederherstellen" : "Archivieren")">
+                                <svg aria-hidden="true"><use href="#i-archive"/></svg>
+                            </button>
+                        </form>
+                        <a class="btn btn-sm btn-ghost btn-icon" asp-page="/Notes/Edit" asp-route-id="@n.Id" title="Bearbeiten">
+                            <svg aria-hidden="true"><use href="#i-edit"/></svg>
+                        </a>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@n.Id" style="display:inline;"
+                              data-confirm="Diese Notiz wirklich löschen?">
+                            <button type="submit" class="btn btn-sm btn-ghost btn-icon" title="Löschen">
+                                <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@functions {
+    private static string NoteExcerpt(string content)
+    {
+        var text = content.Replace("\r\n", " ").Replace("\n", " ").Trim();
+        return text.Length > 140 ? text[..137] + "…" : text;
+    }
+}

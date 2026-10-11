@@ -1,0 +1,29 @@
+@page
+@model DESD.LifeHub.Web.Pages.ErrorModel
+@{
+    ViewData["Title"] = "Fehler";
+}
+<div class="empty" style="max-width:560px;margin:0 auto;padding-top:var(--sp-7);">
+    <div class="empty-icon">
+        <svg aria-hidden="true" focusable="false"><use href="#i-alert-circle"/></svg>
+    </div>
+    <h3>@(Model.IsNotFound ? "Seite nicht gefunden" : "Es ist ein Fehler aufgetreten")</h3>
+    <p>
+        @if (Model.IsNotFound)
+        {
+            <text>Die angeforderte Seite oder Datei existiert nicht (Fehler 404). Prüfen Sie die Adresse oder kehren Sie zur Übersicht zurück.</text>
+        }
+        else if (!string.IsNullOrEmpty(Model.RequestCode))
+        {
+            <text>Die Anforderung konnte nicht abgeschlossen werden (Fehler @Model.RequestCode). Bitte versuchen Sie es erneut.</text>
+        }
+        else
+        {
+            <text>Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut oder wenden Sie sich an den Administrator.</text>
+        }
+    </p>
+    <div class="btn-group">
+        <a class="btn" asp-page="/Dashboard">Zur Übersicht</a>
+        <a class="btn btn-secondary" asp-page="/Account/Login">Anmelden</a>
+    </div>
+</div>

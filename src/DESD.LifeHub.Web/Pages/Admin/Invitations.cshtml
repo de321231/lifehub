@@ -1,0 +1,122 @@
+@page
+@model InvitationsModel
+
+<div class="page-actions" style="display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+    <a class="btn btn-secondary" asp-page="/Admin/Index">
+        <svg aria-hidden="true"><use href="#i-arrow-left"/></svg> Übersicht
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.InviteLink))
+{
+    <div class="alert alert-info" role="alert" style="margin-bottom:var(--sp-4);">
+        <svg aria-hidden="true"><use href="#i-mail"/></svg>
+        <div class="alert-body">
+            <strong>Einladungslink für @Model.InviteLinkForEmail</strong>
+            <p class="tiny" style="margin:var(--sp-1) 0;">
+                Gültig bis @(Model.InviteExpiresAt is { } exp ? Model.Local(exp, "dd.MM.yyyy HH:mm") : "–").
+                Der Link wird nur einmal angezeigt – bitte sicher übermitteln.
+            </p>
+            <input class="input" type="text" readonly value="@Model.InviteLink" onclick="this.select()" />
+        </div>
+    </div>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert" style="margin-bottom:var(--sp-4);">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body">
+            <div asp-validation-summary="All"></div>
+        </div>
+    </div>
+}
+
+<div class="grid grid-dashboard" style="align-items:start;">
+    <section class="card">
+        <div class="card-header">
+            <h2>Neue Einladung</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Create" class="grid" style="gap:var(--sp-3);">
+                <div class="field">
+                    <label asp-for="Invite.Email">E-Mail</label>
+                    <input asp-for="Invite.Email" type="email" autocomplete="off" />
+                    <span asp-validation-for="Invite.Email" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Invite.DisplayName">Name</label>
+                    <input asp-for="Invite.DisplayName" type="text" />
+                    <span asp-validation-for="Invite.DisplayName" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Invite.OrganizationId">Firma (optional)</label>
+                    <select asp-for="Invite.OrganizationId">
+                        <option value="">Nur persönliches Konto</option>
+                        @foreach (var c in Model.Companies)
+                        {
+                            <option value="@c.OrganizationId">@c.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Invite.OrganizationId" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Invite.ValidDays">Gültig (Tage)</label>
+                    <input asp-for="Invite.ValidDays" type="number" min="1" max="90" />
+                    <span asp-validation-for="Invite.ValidDays" class="field-error"></span>
+                </div>
+                <div>
+                    <button type="submit" class="btn">
+                        <svg aria-hidden="true"><use href="#i-plus"/></svg> Einladung erstellen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header">
+            <h2>Offene Einladungen</h2>
+            <div class="card-actions tiny text-muted">@Model.Open.Count Einträge</div>
+        </div>
+        <div class="card-body tight">
+            @if (Model.Open.Count == 0)
+            {
+                <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                    <div class="empty-icon"><svg aria-hidden="true"><use href="#i-mail"/></svg></div>
+                    <h3>Keine offenen Einladungen</h3>
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col">Empfänger</th>
+                                <th scope="col">Firma</th>
+                                <th scope="col">Läuft ab</th>
+                                <th scope="col">Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in Model.Open)
+                            {
+                                <tr>
+                                    <td class="strong">@i.DisplayName<div class="tiny text-muted">@i.Email</div></td>
+                                    <td class="tiny">@(i.Organization?.Name ?? "–")</td>
+                                    <td class="tiny">@Model.Local(i.ExpiresAt, "dd.MM.yyyy HH:mm")</td>
+                                    <td>
+                                        <form method="post" asp-page-handler="Revoke" asp-route-id="@i.Id" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-ghost">Zurückziehen</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</div>

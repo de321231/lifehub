@@ -1,0 +1,54 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Anmelden";
+}
+<h2 style="margin-bottom:var(--sp-2);">Willkommen zurück</h2>
+<p class="text-muted" style="margin-bottom:var(--sp-5);">Melden Sie sich an, um fortzufahren.</p>
+
+@if (!Model.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+        </div>
+    </div>
+}
+
+<form method="post" novalidate>
+    <div class="form-grid" style="grid-template-columns:minmax(0,1fr);">
+        <div class="field">
+            <label asp-for="Input.Email">E-Mail-Adresse</label>
+            <input asp-for="Input.Email" autocomplete="username" autofocus />
+            <span asp-validation-for="Input.Email" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Password">Passwort</label>
+            <input asp-for="Input.Password" autocomplete="current-password" />
+            <span asp-validation-for="Input.Password" class="field-error"></span>
+        </div>
+    </div>
+    <label class="check" style="margin-top:var(--sp-2);">
+        <input asp-for="Input.RememberMe" />
+        <span class="check-text">
+            <span class="check-title">Angemeldet bleiben</span>
+            <span class="check-desc">Verlängert die Sitzung auf diesem Gerät.</span>
+        </span>
+    </label>
+    <input type="hidden" asp-for="ReturnUrl" />
+    <button type="submit" class="btn btn-lg btn-block" style="margin-top:var(--sp-4);">Anmelden</button>
+</form>
+
+<div class="divider"></div>
+<p class="small text-muted" style="margin:0;">
+    @if (Model.AllowSelfRegistration)
+    {
+        <text>Noch kein Konto? <a asp-page="/Account/Register">Konto erstellen</a></text>
+    }
+    else
+    {
+        <text>Die Selbstregistrierung ist deaktiviert. Bitte wenden Sie sich an Ihren Administrator.</text>
+    }
+</p>
+<partial name="_ValidationScriptsPartial" />

@@ -1,0 +1,107 @@
+@page
+@model IndexModel
+
+<div class="grid grid-4">
+    <div class="card stat">
+        <span class="stat-icon"><svg aria-hidden="true"><use href="#i-users"/></svg></span>
+        <div>
+            <div class="stat-value">@Model.TotalUsers</div>
+            <div class="stat-label">Benutzerkonten</div>
+        </div>
+    </div>
+    <div class="card stat">
+        <span class="stat-icon success"><svg aria-hidden="true"><use href="#i-check-circle"/></svg></span>
+        <div>
+            <div class="stat-value">@Model.ActiveUsers</div>
+            <div class="stat-label">Aktive Konten</div>
+        </div>
+    </div>
+    <div class="card stat">
+        <span class="stat-icon info"><svg aria-hidden="true"><use href="#i-shield"/></svg></span>
+        <div>
+            <div class="stat-value">@Model.ValidLicenses</div>
+            <div class="stat-label">Gültige Lizenzen</div>
+        </div>
+    </div>
+    <div class="card stat">
+        <span class="stat-icon warning"><svg aria-hidden="true"><use href="#i-mail"/></svg></span>
+        <div>
+            <div class="stat-value">@Model.OpenInvitations</div>
+            <div class="stat-label">Offene Einladungen</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-dashboard" style="margin-top:var(--sp-4);align-items:start;">
+    <section class="card">
+        <div class="card-header">
+            <h2>Neueste Benutzer</h2>
+            <div class="card-actions">
+                <a class="btn btn-sm btn-secondary" asp-page="/Admin/Users">Alle Benutzer</a>
+            </div>
+        </div>
+        <div class="card-body tight">
+            @if (Model.RecentUsers.Count == 0)
+            {
+                <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                    <div class="empty-icon"><svg aria-hidden="true"><use href="#i-users"/></svg></div>
+                    <h3>Keine Benutzer</h3>
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">E-Mail</th>
+                                <th scope="col">Registriert</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var u in Model.RecentUsers)
+                            {
+                                <tr>
+                                    <td class="strong">@u.DisplayName</td>
+                                    <td class="tiny text-muted">@u.Email</td>
+                                    <td class="tiny">@Model.Local(u.CreatedAt, "dd.MM.yyyy")</td>
+                                    <td>
+                                        @if (!u.IsActive)
+                                        {
+                                            <span class="badge badge-danger">Deaktiviert</span>
+                                        }
+                                        else if (u.Roles.Contains("Admin"))
+                                        {
+                                            <span class="badge badge-brand">Admin</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-success">Aktiv</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+
+    <div class="grid" style="gap:var(--sp-4);">
+        <section class="card">
+            <div class="card-header">
+                <h2>Verwaltungsaktionen</h2>
+            </div>
+            <div class="card-body">
+                <div class="grid" style="gap:var(--sp-2);">
+                    <a class="btn btn-secondary" asp-page="/Admin/Users">Benutzer verwalten</a>
+                    <a class="btn btn-secondary" asp-page="/Admin/Licenses">Lizenzen ansehen</a>
+                    <a class="btn btn-secondary" asp-page="/Admin/Invitations">Einladung erstellen</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

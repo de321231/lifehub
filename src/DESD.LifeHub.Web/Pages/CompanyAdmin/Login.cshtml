@@ -1,0 +1,48 @@
+@page "/{slug}/adminlogin"
+@model LoginModel
+
+<h1 style="font-size:var(--fs-lg);margin-bottom:var(--sp-1);">Firmenverwaltung</h1>
+@if (Model.CompanyNotFound)
+{
+    <div class="alert alert-danger" role="alert">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body">
+            Die Firma <strong>@Model.Slug</strong> wurde nicht gefunden. Bitte prüfen Sie den Link.
+        </div>
+    </div>
+}
+else
+{
+    <p class="text-muted" style="margin-bottom:var(--sp-4);">
+        Anmeldung für <strong>@Model.CompanyName</strong>. Bitte melden Sie sich mit Ihrem
+        Firmenadministrator-Konto an.
+    </p>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" role="alert">
+            <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+            <div class="alert-body"><div asp-validation-summary="All"></div></div>
+        </div>
+    }
+
+    <form method="post" class="grid" style="gap:var(--sp-3);">
+        <div class="field">
+            <label asp-for="Input.Email">E-Mail</label>
+            <input asp-for="Input.Email" type="email" autocomplete="username" />
+            <span asp-validation-for="Input.Email" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Input.Password">Passwort</label>
+            <input asp-for="Input.Password" type="password" autocomplete="current-password" />
+            <span asp-validation-for="Input.Password" class="field-error"></span>
+        </div>
+        <div>
+            <button type="submit" class="btn" style="width:100%;">Anmelden</button>
+        </div>
+    </form>
+}
+
+<p class="tiny text-muted" style="margin-top:var(--sp-4);">
+    <a asp-page="/Account/Login">Zur normalen Anmeldung</a>
+</p>

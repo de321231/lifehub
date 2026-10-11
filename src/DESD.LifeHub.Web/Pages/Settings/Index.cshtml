@@ -1,0 +1,106 @@
+@page
+@model IndexModel
+
+@if (!Model.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+        <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+    </div>
+}
+
+<div class="grid grid-dashboard" style="align-items:start;">
+    <div class="grid" style="gap:var(--sp-4);">
+        <section class="card">
+            <div class="card-header">
+                <h2>Profil</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="Profile" novalidate>
+                    <div class="form-grid" style="grid-template-columns:minmax(0,1fr);">
+                        <div class="field">
+                            <label asp-for="Input.DisplayName">Anzeigename</label>
+                            <input asp-for="Input.DisplayName" autofocus />
+                            <span asp-validation-for="Input.DisplayName" class="field-error"></span>
+                        </div>
+                        <div class="field">
+                            <label>E-Mail-Adresse</label>
+                            <input value="@Model.CurrentEmail" disabled />
+                            <span class="hint">Die E-Mail-Adresse ist Ihre Anmeldekennung und kann nicht geändert werden.</span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="Input.TimeZoneId">Zeitzone</label>
+                            <select asp-for="Input.TimeZoneId">
+                                @foreach (var tz in Model.TimeZones)
+                                {
+                                    <option value="@tz">@tz</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.TimeZoneId" class="field-error"></span>
+                            <span class="hint">Alle Zeitangaben werden in dieser Zeitzone angezeigt.</span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="Input.Theme">Darstellung</label>
+                            <select asp-for="Input.Theme">
+                                <option value="@ThemePreference.System">System</option>
+                                <option value="@ThemePreference.Light">Hell</option>
+                                <option value="@ThemePreference.Dark">Dunkel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns:minmax(0,1fr);margin-top:var(--sp-4);">
+                        <div class="field" style="border-top:1px solid var(--border);padding-top:var(--sp-3);">
+                            <span class="strong">Benachrichtigungen</span>
+                            <span class="small text-muted" style="display:block;margin-top:2px;">Wählen Sie, wie Sie über Erinnerungen informiert werden möchten.</span>
+                        </div>
+                        <div class="field">
+                            <label class="check">
+                                <input asp-for="Input.InAppNotifications" />
+                                <span class="check-text"><span class="check-title">In der App</span></span>
+                            </label>
+                            <label class="check">
+                                <input asp-for="Input.EmailNotifications" />
+                                <span class="check-text">
+                                    <span class="check-title">Per E-Mail</span>
+                                    <span class="check-hint small text-muted">Nur wirksam, wenn E-Mail-Versand auf dem Server konfiguriert ist.</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn" style="margin-top:var(--sp-4);">Einstellungen speichern</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <div class="grid" style="gap:var(--sp-4);">
+        <section class="card">
+            <div class="card-header">
+                <h2>Sicherheit</h2>
+            </div>
+            <div class="card-body">
+                <dl class="kv" style="margin-bottom:var(--sp-3);">
+                    <dt>Passwort</dt>
+                    <dd>Sie können Ihr Passwort jederzeit selbst ändern.</dd>
+                </dl>
+                <a class="btn btn-secondary" asp-page="/Account/ChangePassword">Passwort ändern</a>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <h2>Lizenz &amp; Konto</h2>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted" style="margin-bottom:var(--sp-3);">
+                    Ihr Zugriff wird anhand einer persönlichen Produktlizenz geprüft. Den
+                    Lizenzstatus und die Verwaltung Ihres Schlüssels finden Sie auf der
+                    Lizenzseite.
+                </p>
+                <a class="btn btn-secondary" asp-page="/License/Index">Lizenz anzeigen</a>
+            </div>
+        </section>
+    </div>
+</div>

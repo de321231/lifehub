@@ -1,0 +1,77 @@
+@page
+@model IndexModel
+
+<div class="grid grid-dashboard" style="align-items:start;">
+    <section class="card">
+        <div class="card-header">
+            <h2>Ihre Bereiche · @Model.Organizations.Count</h2>
+        </div>
+        <div class="card-body tight">
+            @if (Model.Organizations.Count == 0)
+            {
+                <div class="empty" style="padding:var(--sp-5) var(--sp-4);">
+                    <div class="empty-icon"><svg aria-hidden="true"><use href="#i-users"/></svg></div>
+                    <h3>Noch keine Organisationen</h3>
+                    <p>Erstellen Sie eine Organisation, um gemeinsam mit anderen Mitgliedern an Aufgaben, Notizen und Terminen zu arbeiten. Ihr persönlicher Bereich steht Ihnen automatisch zur Verfügung.</p>
+                </div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var org in Model.Organizations)
+                    {
+                        <li class="list-item">
+                            <svg class="nav-icon" aria-hidden="true"><use href="#i-users"/></svg>
+                            <div class="list-main">
+                                <span class="list-title">
+                                    <a asp-page="/Organizations/Details" asp-route-id="@org.Id">@org.Name</a>
+                                    @if (org.IsPersonal)
+                                    {
+                                        <span class="badge badge-outline">Persönlich</span>
+                                    }
+                                    <span class="badge badge-neutral">@Ui.RoleText(org.Role)</span>
+                                </span>
+                                <span class="list-meta">
+                                    <span>@org.MemberCount Mitglied(er)</span>
+                                    @if (!string.IsNullOrWhiteSpace(org.Slug)) { <span>@org.Slug</span> }
+                                </span>
+                            </div>
+                            <div class="list-actions">
+                                <a class="btn btn-sm btn-secondary" asp-page="/Organizations/Details" asp-route-id="@org.Id">Öffnen</a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </section>
+
+    <section class="card" style="align-self:start;">
+        <div class="card-header">
+            <h2>Neue Organisation</h2>
+        </div>
+        <div class="card-body">
+            @if (!Model.ModelState.IsValid)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <svg aria-hidden="true"><use href="#i-alert-circle"/></svg>
+                    <div class="alert-body"><div asp-validation-summary="ModelOnly" class="validation-summary"></div></div>
+                </div>
+            }
+
+            <form method="post" asp-page-handler="Create" novalidate>
+                <div class="form-grid" style="grid-template-columns:minmax(0,1fr);">
+                    <div class="field">
+                        <label asp-for="Input.Name">Name</label>
+                        <input asp-for="Input.Name" autofocus placeholder="z. B. Team Marketing" />
+                        <span asp-validation-for="Input.Name" class="field-error"></span>
+                    </div>
+                </div>
+                <p class="small text-muted" style="margin-top:var(--sp-2);">
+                    Als Eigentümer können Sie weitere Mitglieder einladen und den Bereich gemeinsam nutzen.
+                </p>
+                <button type="submit" class="btn" style="margin-top:var(--sp-3);">Organisation anlegen</button>
+            </form>
+        </div>
+    </section>
+</div>
